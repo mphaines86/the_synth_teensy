@@ -45,3 +45,8 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+Visual Micro/Compile.vmps.xml
+the_synth_due.cppproj
+Visual Micro/Configuration.Debug.vmps.xml
+Visual Micro/.the_synth_due.vsarduino.h
+Visual Micro/Configuration.Release.vmps.xml
