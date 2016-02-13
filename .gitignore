@@ -53,3 +53,6 @@ the_synth_due.cppproj
 Visual Micro/Configuration.Debug.vmps.xml
 Visual Micro/.the_synth_due.vsarduino.h
 Visual Micro/Configuration.Release.vmps.xml
+the_synth_due.atsln
+the_synth_due.atsuo
+*.tmp
