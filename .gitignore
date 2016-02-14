@@ -56,3 +56,5 @@ Visual Micro/Configuration.Release.vmps.xml
 the_synth_due.atsln
 the_synth_due.atsuo
 *.tmp
+Debug/Makefile
+Debug/makedep.mk

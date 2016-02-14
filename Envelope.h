@@ -30,7 +30,10 @@ struct envelope_struct {
 	EnvelopeStage_t stage;
 	};
 
-void envelope_trigger(uint8_t stage);
+void envelope_trigger(struct envelope_struct * envelope);
+inline void updateStageVariables(struct envelope_struct * envelope, EnvelopeStage_t stage);
+
+EnvelopeStage_t env_getStage(struct envelope_struct * envelope);
 void envelope_update(struct envelope_struct * envelope);
 
 
