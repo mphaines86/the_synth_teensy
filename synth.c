@@ -12,7 +12,7 @@ static struct{
 	
 	struct envelope_struct amplitudeEnvs[SYNTH_VOICE_COUNT];
 	
-	} synth;
+	} synthesizer;
 
 
 volatile uint32_t phase_accumulators[8] = {
@@ -52,7 +52,7 @@ volatile uint16_t Pitch_bend[8] = {
   
  volatile int noteTrigger[8] = {
  0, 0, 0, 0, 0, 0, 0, 0,};
-
+volatile int current_stage = 0;
 
 //*********************************************************************************************
 //  Audio driver interrupt
@@ -72,21 +72,24 @@ void TC5_Handler()
 	//-------------------------------
 	// Volume envelope generator
 	//-------------------------------
-	if(noteTrigger[divider] && env_getStage(&synth.amplitudeEnvs[divider])==DEAD){
-		//envelope_trigger(EnvelopeStage_t.ATTACK);
+	if(noteTrigger[divider] && env_getStage(&synthesizer.amplitudeEnvs[divider])==DEAD){
+		envelope_trigger(&synthesizer.amplitudeEnvs[divider]);
 	}
 	else{
-		envelope_update(&synth.amplitudeEnvs[divider]);
+		envelope_update(&synthesizer.amplitudeEnvs[divider]);
+		amplitude[divider] = env_getOutput(&synthesizer.amplitudeEnvs[divider])&(wave_amplitude[divider]);
+		current_stage = env_getStage(&synthesizer.amplitudeEnvs[0]);
+		//Serial.println(amplitude[divider]);
 	}
   
-	if (!(envelope_phase[divider]&0x80)){
+	//if (!(envelope_phase[divider]&0x80)){
 		//envelope_phase[divider] +=env_fast_tuning_word[divider];
-		amplitude[divider] = (*(envs[divider] + (envelope_phase[divider]>>8)))&(wave_amplitude[divider]);
+		//amplitude[divider] = (*(envs[divider] + (envelope_phase[divider]>>8)))&(wave_amplitude[divider]);
     
 	//AMP[divider] = pgm_read_byte(envs[divider] + (((unsigned char*)&(EPCW[divider]+=EFTW[divider]))[1]));
-	}
-	else
-		amplitude[divider] = 0;
+	//}
+	//else
+		//amplitude[divider] = 0;
 
 	//-------------------------------
 	//  Synthesizer/audio mixer

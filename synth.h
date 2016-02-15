@@ -34,6 +34,7 @@ extern volatile unsigned char output_mode;
 extern volatile uint8_t wave_amplitude[8];
 extern volatile uint16_t Pitch_bend[8];
 extern volatile int noteTrigger[8];
+extern volatile int current_stage;
 
 //*********************************************************************************************
 //  Audio driver interrupt

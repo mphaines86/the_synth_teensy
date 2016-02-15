@@ -174,7 +174,7 @@ public:
 
   void mTrigger(unsigned char voice,unsigned char MIDInote, unsigned char amplitude)
   {
-    pitch[voice]=*(&PITCHS[MIDInote-12]);
+    pitch[voice]=*(&PITCHS[MIDInote]);
     envelope_phase[voice]=0;
 	phase_accumulators[voice] = 0;
     wave_amplitude[voice] = amplitude;
