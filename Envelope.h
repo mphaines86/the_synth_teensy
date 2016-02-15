@@ -35,6 +35,7 @@ struct envelope_struct {
 	};
 
 void envelope_trigger(struct envelope_struct * envelope);
+static inline void updateStageVariables(struct envelope_struct * envelope, EnvelopeStage_t stage);
 
 void setValues (struct envelope_struct * envelope, uint16_t stageinc, uint16_t attack, uint16_t decay, uint16_t release, uint16_t level, uint16_t sustain);
 uint16_t env_getOutput(struct envelope_struct * envelope);

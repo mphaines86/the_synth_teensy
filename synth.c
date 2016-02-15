@@ -75,11 +75,11 @@ void TC5_Handler()
 	if(noteTrigger[divider] && env_getStage(&synthesizer.amplitudeEnvs[divider])==DEAD){
 		envelope_trigger(&synthesizer.amplitudeEnvs[divider]);
 	}
+	
 	else{
 		envelope_update(&synthesizer.amplitudeEnvs[divider]);
 		amplitude[divider] = env_getOutput(&synthesizer.amplitudeEnvs[divider])&(wave_amplitude[divider]);
 		current_stage = env_getStage(&synthesizer.amplitudeEnvs[0]);
-		//Serial.println(amplitude[divider]);
 	}
   
 	//if (!(envelope_phase[divider]&0x80)){

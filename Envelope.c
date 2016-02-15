@@ -9,6 +9,8 @@
 inline void envelope_trigger(struct envelope_struct * env){
 	env->output = 0;
 	env->phase = 0;
+	
+	//These values are only temporary
 	env->stageLevel = 0;
 	env->stage = ATTACK;
 	env->attackIncreament = 10;
@@ -17,17 +19,10 @@ inline void envelope_trigger(struct envelope_struct * env){
 	env->sustainCV = 65533;
 	env->levelCV = 65533;
 	env->stageIncreament = 10;
-	//updateStageVariables(env, ATTACK);
+	//******************************
+	
+	updateStageVariables(env, ATTACK);
 	envelope_update(env);
-}
-
-inline void setValues(struct envelope_struct * envelope, uint16_t stageinc, uint16_t attack, uint16_t decay, uint16_t release, uint16_t level, uint16_t sustain){
-	envelope->stageIncreament = stageinc;
-	envelope->attackIncreament = attack;
-	envelope->decayIncreament = decay;
-	envelope->releaseIncreament = release;
-	envelope->levelCV = level;
-	envelope->sustainCV = sustain;
 }
 
 static inline void updateStageVariables(struct envelope_struct * envelope, EnvelopeStage_t stage){
@@ -81,7 +76,7 @@ inline uint16_t env_getOutput(struct envelope_struct * envelope)
 
 inline void envelope_update(struct envelope_struct * env){
 	
-	if(env->phase>>16)
+	if(env->phase>>8)
 		handlePhaseOverflow(env);
   
 	uint8_t o = 0;

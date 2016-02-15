@@ -10,7 +10,6 @@
 
 #include "tables_due.h"
 #include "synth.h"
-
 #define DIFF 1
 #define CHA 2
 #define CHB 3
