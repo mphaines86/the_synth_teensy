@@ -33,10 +33,10 @@ volatile uint16_t  env_fast_tuning_word[8] = {
   10, 10, 10, 10, 10, 10, 10, 10};               //-Envelope speed tuning word
 
 volatile uint32_t max_length[8] = {
-  8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 1040384,
-};
+  8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 
+};//1040384, //15043584
 volatile uint32_t loop_point[8] = {
-	8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 0,
+	8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448,
 };
 
 volatile unsigned char divider = 0;//-Sample rate decimator for envelope
@@ -52,6 +52,10 @@ volatile uint16_t Pitch_bend[8] = {
   
  volatile int noteTrigger[8] = {
  0, 0, 0, 0, 0, 0, 0, 0,};
+ 
+volatile int noteDeath[8] = {
+	0, 0, 0, 0, 0, 0, 0, 0,
+};
 volatile int current_stage = 0;
 
 //*********************************************************************************************
@@ -72,8 +76,15 @@ void TC5_Handler()
 	//-------------------------------
 	// Volume envelope generator
 	//-------------------------------
-	if(noteTrigger[divider] && env_getStage(&synthesizer.amplitudeEnvs[divider])==DEAD){
+	if(noteTrigger[divider]){
 		envelope_trigger(&synthesizer.amplitudeEnvs[divider]);
+		noteTrigger[divider] = 0;
+		//current_stage = 1;
+	}
+	
+	else if (noteDeath[divider] == 1){
+		envelope_setStage(&synthesizer.amplitudeEnvs[divider], RELEASE);
+		noteDeath[divider] = 0;
 	}
 	
 	else{
@@ -94,15 +105,15 @@ void TC5_Handler()
 	//-------------------------------
 	//  Synthesizer/audio mixer
 	//-------------------------------
-	if (phase_accumulators[7] >= max_length[7]) frequancy_tuning_word[7] = 0;
+	//if (phase_accumulators[7] >= max_length[7]) frequancy_tuning_word[7] = 0;
  
 	phase_accumulators[0] += frequancy_tuning_word[0] + Pitch_bend[0];
 	phase_accumulators[1] += frequancy_tuning_word[1] + Pitch_bend[1];
-	phase_accumulators[2] += frequancy_tuning_word[2];
-	phase_accumulators[3] += frequancy_tuning_word[3];
-	phase_accumulators[4] += frequancy_tuning_word[4];
-	phase_accumulators[5] += frequancy_tuning_word[5];
-	phase_accumulators[6] += frequancy_tuning_word[6];
+	phase_accumulators[2] += frequancy_tuning_word[2] + Pitch_bend[2];
+	phase_accumulators[3] += frequancy_tuning_word[3] + Pitch_bend[3];
+	phase_accumulators[4] += frequancy_tuning_word[4] + Pitch_bend[4];
+	phase_accumulators[5] += frequancy_tuning_word[5] + Pitch_bend[5];
+	phase_accumulators[6] += frequancy_tuning_word[6] + Pitch_bend[6];
 	phase_accumulators[7] += frequancy_tuning_word[7] + Pitch_bend[7];
 
   

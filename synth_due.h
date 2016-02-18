@@ -111,7 +111,8 @@ public:
 
   void setWave(unsigned char voice, uint8_t *wave){
       
-	  wavs[voice] = wave;	
+	  wavs[voice] = wave;
+	  
   }
   //*********************************************************************
   //  Setup Pitch [0-127]
@@ -182,7 +183,7 @@ public:
   }
 
   void noteOff(unsigned char voice){
-	noteTrigger[voice] = 0;
+	noteDeath[voice] = 1;
     envelope_phase[voice]=0x80;
     amplitude[voice] = 0;
   }
