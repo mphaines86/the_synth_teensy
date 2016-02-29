@@ -10,6 +10,7 @@
 #define INCFILE1_H_
 
 #include "synth.h"
+#include "tables_due.h"
 
 typedef enum
 {
@@ -27,7 +28,7 @@ struct oscillator_struct{
 	uint32_t max_length;
 	uint32_t loop_point;
 	
-	struct *wavs[128];
+	struct Voice *wavs[128];
 };
 
 void osc_init(struct oscillator_struct * osc, uint8_t wav,uint32_t max_length,uint32_t loop_point);
