@@ -34,11 +34,11 @@ struct envelope_struct {
 	EnvelopeStage_t stage;
 	};
 
-void envelope_trigger(struct envelope_struct * envelope);
+void envelope_trigger(struct envelope_struct * envelope, uint16_t level);
 static inline void updateStageVariables(struct envelope_struct * envelope, EnvelopeStage_t stage);
 void envelope_setStage(struct envelope_struct * envelope, EnvelopeStage_t stage);
+void envelope_setup(struct envelope_struct * envelope, uint32_t attack, uint32_t decay, uint16_t sustain, uint32_t release);
 
-void setValues (struct envelope_struct * envelope, uint16_t stageinc, uint16_t attack, uint16_t decay, uint16_t release, uint16_t level, uint16_t sustain);
 uint16_t env_getOutput(struct envelope_struct * envelope);
 EnvelopeStage_t env_getStage(struct envelope_struct * envelope);
 void envelope_update(struct envelope_struct * envelope);

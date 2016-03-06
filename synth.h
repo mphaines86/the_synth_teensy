@@ -31,16 +31,18 @@ extern volatile uint16_t time_hz;
 extern volatile unsigned char tik; 
 extern volatile unsigned char output_mode;
 
-extern volatile uint8_t wave_amplitude[8];
-extern volatile uint16_t Pitch_bend[8];
+extern volatile uint16_t wave_amplitude[8];
+extern volatile int16_t Pitch_bend[8];
 extern volatile int noteTrigger[8];
 extern volatile int noteDeath[8];
 extern volatile int current_stage;
+extern volatile uint16_t test_variable;
 
 //*********************************************************************************************
 //  Audio driver interrupt
 //*********************************************************************************************
 
 void TC5_Handler();
+void set_envelopes();
 
 #endif /* INCFILE1_H_ */

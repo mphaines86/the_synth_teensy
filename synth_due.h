@@ -10,9 +10,6 @@
 
 #include "tables_due.h"
 #include "synth.h"
-#define DIFF 1
-#define CHA 2
-#define CHB 3
 
 #define SINE     0
 #define TRIANGLE 1
@@ -57,6 +54,7 @@ public:
         TC1->TC_CHANNEL[2].TC_IDR=~TC_IER_CPCS;
         NVIC_EnableIRQ(TC5_IRQn);
   
+		//set_envelopes();
   }
 
   //*********************************************************************
@@ -172,13 +170,13 @@ public:
   //  Midi trigger
   //*********************************************************************
 
-  void mTrigger(unsigned char voice,unsigned char MIDInote, unsigned char amplitude)
+  void mTrigger(unsigned char voice,unsigned char MIDInote, uint16_t amplitude)
   {
     pitch[voice]=*(&PITCHS[MIDInote]);
     envelope_phase[voice]=0;
 	phase_accumulators[voice] = 0;
     wave_amplitude[voice] = amplitude;
-    frequancy_tuning_word[divider] = pitch[voice] + (int)   (((pitch[voice]>>6)*(envelope_phase[voice]>>6))/128);//*MOD[voice];
+    frequancy_tuning_word[divider] = pitch[voice] + (int)(((pitch[voice]>>6)*(envelope_phase[voice]>>6))/128);//*MOD[voice];
 	noteTrigger[voice] = 1;
   }
 

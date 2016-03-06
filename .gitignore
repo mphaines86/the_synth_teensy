@@ -58,3 +58,4 @@ the_synth_due.atsuo
 *.tmp
 Debug/Makefile
 Debug/makedep.mk
+*.d

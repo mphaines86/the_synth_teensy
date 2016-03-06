@@ -33,10 +33,10 @@ volatile uint16_t  env_fast_tuning_word[8] = {
   10, 10, 10, 10, 10, 10, 10, 10};               //-Envelope speed tuning word
 
 volatile uint32_t max_length[8] = {
-  8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 
+  8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 1040384, 
 };//1040384, //15043584
 volatile uint32_t loop_point[8] = {
-	8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448,
+	8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 0,
 };
 
 volatile unsigned char divider = 0;//-Sample rate decimator for envelope
@@ -44,10 +44,10 @@ volatile uint16_t time_hz = 0;
 volatile unsigned char tik = 0; 
 volatile unsigned char output_mode;
 
-volatile uint8_t wave_amplitude[8] = {
+volatile uint16_t wave_amplitude[8] = {
   0, 0, 0, 0, 0, 0, 0, 0,
 };
-volatile uint16_t Pitch_bend[8] = {
+volatile int16_t Pitch_bend[8] = {
   0, 0, 0, 0, 0, 0, 0, 0,};
   
  volatile int noteTrigger[8] = {
@@ -57,6 +57,8 @@ volatile int noteDeath[8] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
 };
 volatile int current_stage = 0;
+
+volatile uint16_t test_variable = 0;
 
 //*********************************************************************************************
 //  Audio driver interrupt
@@ -77,36 +79,29 @@ void TC5_Handler()
 	// Volume envelope generator
 	//-------------------------------
 	if(noteTrigger[divider]){
-		envelope_trigger(&synthesizer.amplitudeEnvs[divider]);
+		set_envelopes();
+		envelope_trigger(&synthesizer.amplitudeEnvs[divider], wave_amplitude[divider]);
 		noteTrigger[divider] = 0;
 		//current_stage = 1;
 	}
 	
 	else if (noteDeath[divider] == 1){
-		envelope_setStage(&synthesizer.amplitudeEnvs[divider], RELEASE);
+		envelope_setStage(&synthesizer.amplitudeEnvs[divider],RELEASE);
 		noteDeath[divider] = 0;
 	}
+	envelope_update(&synthesizer.amplitudeEnvs[divider]);
+	amplitude[divider] = env_getOutput(&synthesizer.amplitudeEnvs[divider]);//&(wave_amplitude[divider]);
+	current_stage = env_getStage(&synthesizer.amplitudeEnvs[0]);
 	
-	else{
-		envelope_update(&synthesizer.amplitudeEnvs[divider]);
-		amplitude[divider] = env_getOutput(&synthesizer.amplitudeEnvs[divider])&(wave_amplitude[divider]);
-		current_stage = env_getStage(&synthesizer.amplitudeEnvs[0]);
-	}
   
-	//if (!(envelope_phase[divider]&0x80)){
-		//envelope_phase[divider] +=env_fast_tuning_word[divider];
-		//amplitude[divider] = (*(envs[divider] + (envelope_phase[divider]>>8)))&(wave_amplitude[divider]);
-    
-	//AMP[divider] = pgm_read_byte(envs[divider] + (((unsigned char*)&(EPCW[divider]+=EFTW[divider]))[1]));
-	//}
-	//else
-		//amplitude[divider] = 0;
-
+  
 	//-------------------------------
 	//  Synthesizer/audio mixer
 	//-------------------------------
-	//if (phase_accumulators[7] >= max_length[7]) frequancy_tuning_word[7] = 0;
- 
+	if (phase_accumulators[7] >= 1000384){ 
+		frequancy_tuning_word[7] = 0;
+		//amplitude[7] = 0;
+	}
 	phase_accumulators[0] += frequancy_tuning_word[0] + Pitch_bend[0];
 	phase_accumulators[1] += frequancy_tuning_word[1] + Pitch_bend[1];
 	phase_accumulators[2] += frequancy_tuning_word[2] + Pitch_bend[2];
@@ -116,7 +111,6 @@ void TC5_Handler()
 	phase_accumulators[6] += frequancy_tuning_word[6] + Pitch_bend[6];
 	phase_accumulators[7] += frequancy_tuning_word[7] + Pitch_bend[7];
 
-  
 	while (phase_accumulators[0] >= max_length[0]) phase_accumulators[0] -= loop_point[0];
 	while (phase_accumulators[1] >= max_length[1]) phase_accumulators[1] -= loop_point[1];
 	while (phase_accumulators[2] >= max_length[2]) phase_accumulators[2] -= loop_point[2];
@@ -137,10 +131,19 @@ void TC5_Handler()
 	REG_PIOD_ODSR = 127 + ((((wave_zero * amplitude[0]) >> 8) + ((wave_one * amplitude[1]) >> 8) + ((wave_two * amplitude[2]) >> 8) + ((wave_three * amplitude[3]) >> 8)+
 					((wave_four * amplitude[4]) >> 8) + ((wave_five * amplitude[5]) >> 8) + ((wave_six * amplitude[6]) >> 8) + ((wave_seven * amplitude[7]) >> 8)) >> 2);
 
+	//test_variable = ((wave_seven * amplitude[7]) >> 8);
 	//************************************************
 	//  Modulation engine
 	//************************************************
 	//  FTW[divider] = PITCH[divider] + (int)   (((PITCH[divider]/64)*(EPCW[divider]/64)) /128)*MOD[divider];
-	frequancy_tuning_word[divider] = pitch[divider] + (((pitch[divider]>>6)*(envelope_phase[divider]>>6))/128);// + Pitch_bend[divider] - 128;//MOD[divider];
+	frequancy_tuning_word[divider] = pitch[divider];// + (((pitch[divider]>>6)*(envelope_phase[divider]>>6))/128);// + Pitch_bend[divider] - 128;//MOD[divider];
 	time_hz++;
+}
+void set_envelopes(){
+	int i = 0;
+	for(i = 0; i < SYNTH_VOICE_COUNT - 1; i++){
+		envelope_setup(&synthesizer.amplitudeEnvs[i], 65535,100,65355,26);
+	}
+	
+	envelope_setup(&synthesizer.amplitudeEnvs[7], 65536,0,65355,0);
 }
