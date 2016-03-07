@@ -7,10 +7,13 @@
 #include <Arduino.h>
 #include "synth.h"
 #include "Envelope.h"
+#include "Osc.h"
+//#include "tables_due.h"
 
 static struct{
 	
 	struct envelope_struct amplitudeEnvs[SYNTH_VOICE_COUNT];
+	struct oscillator_struct oscillators[SYNTH_VOICE_COUNT];
 	
 	} synthesizer;
 
@@ -33,10 +36,10 @@ volatile uint16_t  env_fast_tuning_word[8] = {
   10, 10, 10, 10, 10, 10, 10, 10};               //-Envelope speed tuning word
 
 volatile uint32_t max_length[8] = {
-  8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 1040384, 
+  4166144, 17880320, 17880320, 17880320, 25999360, 17880320, 25999360, 1040384, 
 };//1040384, //15043584
 volatile uint32_t loop_point[8] = {
-	8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 8328448, 0,
+	125184, 4967424, 4967424, 4967424, 1149184, 4967424, 1149184, 0,
 };
 
 volatile unsigned char divider = 0;//-Sample rate decimator for envelope
@@ -140,10 +143,24 @@ void TC5_Handler()
 	time_hz++;
 }
 void set_envelopes(){
-	int i = 0;
-	for(i = 0; i < SYNTH_VOICE_COUNT - 1; i++){
-		envelope_setup(&synthesizer.amplitudeEnvs[i], 65535,100,65355,26);
+	
+	envelope_setup(&synthesizer.amplitudeEnvs[1], 65535,1,65535,0);
+	
+	int i = 1;
+	for(i = 1; i < SYNTH_VOICE_COUNT - 1; i++){
+		envelope_setup(&synthesizer.amplitudeEnvs[i], 65535,1,65535,50);
 	}
 	
 	envelope_setup(&synthesizer.amplitudeEnvs[7], 65536,0,65355,0);
+}
+
+
+void set_oscillators(){
+	int i = 0;
+	for(i = 0; i < SYNTH_VOICE_COUNT - 1; i++){
+		//setVoices(&synthesizer.oscillators[i], &string_C6, 0, 127);
+	}
+	
+	//setVoices(&synthesizer.oscillators[7], &snare,0,127);
+
 }

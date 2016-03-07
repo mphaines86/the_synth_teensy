@@ -6,8 +6,8 @@
  */ 
 
 
-#ifndef ENVELOPE_H_
-#define ENVELOPE_H_
+#ifndef ENVELOPE_H
+#define ENVELOPE_H
 
 #include "synth.h"
 

@@ -1,5 +1,5 @@
-#ifndef _SYNTH
-#define _SYNTH
+#ifndef SYNTH_DUE
+#define SYNTH_DUE
 //*************************************************************************************
 //  Arduino synth V4.1
 //  Optimized audio driver, modulation engine, envelope engine.
@@ -127,24 +127,7 @@ public:
 
   void setEnvelope(unsigned char voice, unsigned char env)
   {
-    switch (env)
-    {
-    case 1:
-      envs[voice] = Env0;
-      break;
-    case 2:
-      envs[voice] = Env1;
-      break;
-    case 3:
-      envs[voice] = Env2;
-      break;
-    case 4:
-      envs[voice] = Env3;
-      break;
-    default:
-      envs[voice] = Env0;
-      break;
-    }
+    
   }
 
   //*********************************************************************

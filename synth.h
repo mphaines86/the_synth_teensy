@@ -6,8 +6,8 @@
  */ 
 
 
-#ifndef synth_H_
-#define synth_H_
+#ifndef SYNTH_H
+#define SYNTH_H
 
 #define SYNTH_VOICE_COUNT 8
 
@@ -44,5 +44,6 @@ extern volatile uint16_t test_variable;
 
 void TC5_Handler();
 void set_envelopes();
+void set_oscillators();
 
 #endif /* INCFILE1_H_ */
