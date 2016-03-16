@@ -17,7 +17,8 @@ typedef enum
 	osmNone, osmMaster, osmSlave
 } oscSyncMode_t;
 
-struct Voice {
+
+struct Given_Voice {
 	uint32_t max_length;
 	uint32_t loop_point;
 	uint8_t pitch_from_C5;
@@ -35,14 +36,14 @@ struct oscillator_struct{
 	
 	uint32_t *max_length[128];
 	uint32_t *loop_point[128];
-	struct Voice *all_wavs[128];
+	struct Given_Voice *all_wavs[128];
 };
 
 void osc_init(struct oscillator_struct * osc, uint8_t wav,uint32_t max_length,uint32_t loop_point);
 void setPitch(struct oscillator_struct * osc,uint16_t value);
 //void setWavs(struct oscillator_struct * osc,uint8_t value, byte lowest_note, byte highest_note);
-void setVoices(struct oscillator_struct * osc, struct Voice * set_voice, byte lowest_note, byte highest_note);
-void setVoice(struct oscillator_struct * osc,uint8_t value, byte lowest_note, byte highest_note);
+void setWaves(struct oscillator_struct * osc, struct Given_Voice * set_voice, byte lowest_note, byte highest_note);
+void setWave(struct oscillator_struct * osc,uint8_t value, byte lowest_note, byte highest_note);
 void osc_update(struct oscillator_struct * osc);
 
 

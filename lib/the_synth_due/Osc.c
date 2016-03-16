@@ -6,7 +6,7 @@
  */ 
 #include "Osc.h"
 
-void setVoices(struct oscillator_struct * osc, struct Voice * set_voice, byte lowest_note, byte highest_note){
+void setWaves(struct oscillator_struct * osc, struct Given_Voice * set_voice, byte lowest_note, byte highest_note){
 	for(lowest_note; lowest_note<=highest_note;lowest_note++){
 		osc->all_wavs[lowest_note] = set_voice;
 	}
