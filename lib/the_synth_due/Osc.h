@@ -3,7 +3,7 @@
  *
  * Created: 2/17/2016 7:59:57 PM
  *  Author: Michael Haines
- */ 
+ */
 
 
 #ifndef OSC_H
@@ -33,12 +33,13 @@ struct oscillator_struct{
 	uint16_t Pitch_bend;
 	uint16_t output;
 	byte note;
-	
+
 	uint32_t *max_length[128];
 	uint32_t *loop_point[128];
 	struct Given_Voice *all_wavs[128];
 };
 
+uint16_t CVtoFrequancy(uint16_t cv);
 void osc_init(struct oscillator_struct * osc, uint8_t wav,uint32_t max_length,uint32_t loop_point);
 void setPitch(struct oscillator_struct * osc,uint16_t value);
 //void setWavs(struct oscillator_struct * osc,uint8_t value, byte lowest_note, byte highest_note);

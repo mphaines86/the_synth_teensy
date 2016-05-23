@@ -1,22 +1,26 @@
-#include <synth_due.h>
+
 #include <MIDI.h>
 #include "Arduino.h"
+extern "C" {
+  #include "synth.h"
+}
 
 #define outputSelector 9
 #define CS 22
 #define WR 24
 #define NUM_SYNTH 16
 int current_notes = 0;
-byte notes[NUM_SYNTH];
-int free_notes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,};
+//byte notes[NUM_SYNTH];
+//int free_notes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,};
+byte pitch_bend_channel[] = {0, 0, 0, 0, 0, 0, 0, 0,};
 
 void handleNoteOn(byte channel, byte pitch, byte velocity);
 void handleNoteOff(byte channel, byte pitch, byte velocity);
 void handlePitchBend(byte channel, int bend);
+void handleControlChange(byte channel, byte pitch, byte velocity);
+void handleAftertouch(byte channel, byte value);
 
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
-
-synth edgar;    //-Make a synth
 
 void setup() {
 
@@ -36,6 +40,7 @@ void setup() {
     //pinMode(27, OUTPUT);
     //pinMode(28, OUTPUT);
     //pinMode(29, OUTPUT);
+    pinMode(51, OUTPUT);
     pinMode(11, OUTPUT);
     pinMode(14, OUTPUT);
     pinMode(15, OUTPUT);
@@ -44,23 +49,20 @@ void setup() {
     digitalWrite(CS, LOW);
     digitalWrite(WR, LOW);
     //digitalWrite(30, LOW);
-    //digitalWrite(31, LOW);
-    //digitalWrite(41, LOW)
+    digitalWrite(31, LOW);
+    digitalWrite(41, LOW);
+    digitalWrite(51, LOW);
 
     REG_PIOD_OWER = 0xFFFF;
     REG_PIOC_OWER = 0xFFFF;
 
-    edgar.begin();
-    for(byte i=0; i<NUM_SYNTH; i+=2){
-	     edgar.setupVoice(i, EuroBell1.wave, 60, ENVELOPE1, 127, 64); //-Set up voice 0
-    }
-    for(byte i=1; i<NUM_SYNTH; i+=2){
-      edgar.setupVoice(i, EuroBell2.wave, 60, ENVELOPE1, 127, 64); //-Set up voice 0
-    }
+    begin();
 
     MIDI.setHandleNoteOn(handleNoteOn);
     MIDI.setHandleNoteOff(handleNoteOff);
     MIDI.setHandlePitchBend(handlePitchBend);
+    MIDI.setHandleControlChange(handleControlChange);
+    MIDI.setHandleAfterTouchChannel(handleAftertouch);
     MIDI.begin(MIDI_CHANNEL_OMNI);
 
 }
@@ -73,37 +75,33 @@ void loop()
 void handleNoteOn(byte channel, byte pitch, byte velocity)
 {
 
-		for(int i= 0; i < NUM_SYNTH; i++){
- 			  if(free_notes[i] > -1){
-				    notes[i] = pitch;
-            notes[i+1] = pitch; // Second Oscillator
-				    edgar.mTrigger(i, pitch, velocity * 516, 0, &EuroBell2);
-            edgar.mTrigger(i + 1, pitch, velocity * 516, 2, &EuroBell1); // Second Oscillator
-				    free_notes[i] = -1;
-            free_notes[i + 1] = -1; // Second Oscillator
-				    break;
-			  }
-		}
-	  //Serial.println(test_variable);
-	  //Serial.println(current_stage);
+    note_trigger(channel, pitch, velocity);
+	  Serial.println(test_variable);
+	  //Serial.println(pitch);
 }
 
 void handleNoteOff(byte channel, byte pitch, byte velocity)
 {
     // Do something when the note is released.
     // Note that NoteOn messages with 0 velocity are interpreted as NoteOffs.
-     //Serial.println(test_variable);
-	  //Serial.println(current_stage);
-	  for(int i= 0; i < NUM_SYNTH; i++){
-		    if(notes[i] == pitch){
-			      edgar.noteOff(i);
-			      free_notes[i] = i;
-			//trigger_note[pitch] = -1;
-		    }
-	  }
+    NoteRelease(channel, pitch, velocity);
+    Serial.println(test_variable);
 }
 
 void handlePitchBend(byte channel, int bend){
-    edgar.pitchBend(channel - 1,bend);
+  //int i;
+  //for(i=0; i < NUM_SYNTH; i++){
+    //if (pitch_bend_channel[i] == channel){
+      //edgar.pitchBend(i,bend);
+    //}
+  //}
+}
 
+void handleControlChange(byte channel, byte number, byte value){
+  ControlChange(number, value);
+
+}
+
+void handleAftertouch(byte channel, byte value){
+    aftertouch = .25 * value;
 }

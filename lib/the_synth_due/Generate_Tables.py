@@ -91,6 +91,50 @@ with open('tables_due.h', 'w') as filehandle:
     given_wave = [int(i) for i in given_wave]
     filehandle.write('\nconst uint8_t EuroBell2_wave[] = {' + ', '.join(repr(x) for x in given_wave) + '};\n')
 
+    f = wave.open("Samples/Arr1.wav", 'r')
+    x = f.readframes(-1)
+    given_wave = np.fromstring(x, 'uint8')
+    given_wave = [int(i) for i in given_wave]
+    filehandle.write('\nconst uint8_t Arr1_wave[] = {' + ', '.join(repr(x) for x in given_wave) + '};\n')
+   
+    f = wave.open("Samples/swannee.wav", 'r')
+    x = f.readframes(-1)
+    given_wave = np.fromstring(x, 'uint8')
+    given_wave = [int(i) for i in given_wave]
+    print(len(given_wave))
+    filehandle.write('\nconst uint8_t Swannee_wave[] = {' + ', '.join(repr(x) for x in given_wave) + '};\n')
+    
+    f = wave.open("Samples/strchoir.wav", 'r')
+    x = f.readframes(-1)
+    given_wave = np.fromstring(x, 'uint8')
+    given_wave = [int(i) for i in given_wave]
+    print(len(given_wave))
+    filehandle.write('\nconst uint8_t strchoir_wave[] = {' + ', '.join(repr(x) for x in given_wave) + '};\n')
+    
+    f = wave.open("Samples/bassgt.wav", 'r')
+    x = f.readframes(-1)
+    given_wave = np.fromstring(x, 'uint8')
+    given_wave = [int(i) for i in given_wave]
+    filehandle.write('\nconst uint8_t bassgt_wave[] = {' + ', '.join(repr(x) for x in given_wave) + '};\n')
+    
+    f = wave.open("Samples/cello3.wav", 'r')
+    x = f.readframes(-1)
+    given_wave = np.fromstring(x, 'uint8')
+    given_wave = [int(i) for i in given_wave]
+    filehandle.write('\nconst uint8_t cello3_wave[] = {' + ', '.join(repr(x) for x in given_wave) + '};\n')
+
+    f = wave.open("Samples/guitar1.wav", 'r')
+    x = f.readframes(-1)
+    given_wave = np.fromstring(x, 'uint8')
+    given_wave = [int(i) for i in given_wave]
+    filehandle.write('\nconst uint8_t guitar1_wave[] = {' + ', '.join(repr(x) for x in given_wave) + '};\n')
+    
+    f = wave.open("Samples/bikodrum.wav", 'r')
+    x = f.readframes(-1)
+    given_wave = np.fromstring(x, 'uint8')
+    given_wave = [int(i) for i in given_wave]
+    filehandle.write('\nconst uint8_t bikodrum_wave[] = {' + ', '.join(repr(x) for x in given_wave) + '};\n')
+    
     '''f = wave.open("Piano_C3.wav", 'r')
     x = f.readframes(-1)
     given_wave = np.fromstring(x, 'uint8')
@@ -103,7 +147,7 @@ with open('tables_due.h', 'w') as filehandle:
 	.loop_point = 262144,\n\
 	.pitch_from_C5 = 0,\n\
 \n\
-	.wave =piano_C5_wave,\n\
+	.wave =EuroBell1_wave,\n\
 };\n')
 
     filehandle.write('struct Voice EuroBell2 {\n\
@@ -111,7 +155,63 @@ with open('tables_due.h', 'w') as filehandle:
 	.loop_point = 262144,\n\
 	.pitch_from_C5 = 0,\n\
 \n\
-	.wave =piano_C6_wave,\n\
+	.wave =EuroBell2_wave,\n\
+};\n')
+
+    filehandle.write('struct Voice Arr1 {\n\
+	.max_length = 18366976,\n\
+	.loop_point = 7298560,\n\
+	.pitch_from_C5 = 3,\n\
+\n\
+	.wave =Arr1_wave,\n\
+};\n')
+
+    filehandle.write('struct Voice Swannee {\n\
+	.max_length = 13107200,\n\
+	.loop_point = 9382912,\n\
+	.pitch_from_C5 = 3,\n\
+\n\
+	.wave =Swannee_wave,\n\
+};\n')
+
+    filehandle.write('struct Voice Strchoir {\n\
+	.max_length = 18320384,\n\
+	.loop_point = 8192000,\n\
+	.pitch_from_C5 = 3,\n\
+\n\
+	.wave =strchoir_wave,\n\
+};\n')
+
+    filehandle.write('struct Voice Bassgt {\n\
+	.max_length = 6404608,\n\
+	.loop_point = 0,\n\
+	.pitch_from_C5 = 3,\n\
+\n\
+	.wave =bassgt_wave,\n\
+};\n')
+
+    filehandle.write('struct Voice cello3 {\n\
+	.max_length = 13703168,\n\
+	.loop_point = 6851584,\n\
+	.pitch_from_C5 = 3,\n\
+\n\
+	.wave =cello3_wave,\n\
+};\n')
+
+    filehandle.write('struct Voice guitar1 {\n\
+	.max_length = 5767168,\n\
+	.loop_point = 148992,\n\
+	.pitch_from_C5 = 3,\n\
+\n\
+	.wave =guitar1_wave,\n\
+};\n')
+    
+    filehandle.write('struct Voice bikodrum {\n\
+	.max_length = 8388608,\n\
+	.loop_point = 0,\n\
+	.pitch_from_C5 = 3,\n\
+\n\
+	.wave =bikodrum_wave,\n\
 };\n')
 
     '''filehandle.write('struct Voice piano_C3 {\n\

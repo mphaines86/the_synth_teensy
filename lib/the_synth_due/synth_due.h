@@ -10,6 +10,7 @@
 
 #include "tables_due.h"
 #include "synth.h"
+#include "pitch_tables.h"
 
 #define SINE     0
 #define TRIANGLE 1
@@ -115,45 +116,54 @@ public:
 
   void setPitch(unsigned char voice,unsigned char MIDInote, uint8_t detune)
   {
-    uint8_t octave = MIDInote / 12;
+    /*uint8_t octave = MIDInote / 12;
     uint8_t pitch_index = (MIDInote - octave * 12) * 20;
     uint16_t pre_pitching = One_Octave_Pitches[pitch_index + detune];
-    switch (octave) {
+    pitch[voice] = (pre_pitching>>(10 - octave));*/
+    /*switch (octave) {
       case 0:
-        pitch[voice] = pre_pitching/1024;
+        pitch[voice] = pre_pitching>>10;
         break;
       case 1:
-        pitch[voice] = pre_pitching/512;
+        pitch[voice] = pre_pitching>>9;
         break;
       case 2:
-        pitch[voice] = pre_pitching/256;
+        pitch[voice] = pre_pitching>>8;
         break;
       case 3:
-        pitch[voice] = pre_pitching/128;
+        pitch[voice] = pre_pitching>>7;
         break;
       case 4:
-        pitch[voice] = pre_pitching/64;
+        pitch[voice] = pre_pitching>>6;
         break;
       case 5:
-        pitch[voice] = pre_pitching/32;
+        pitch[voice] = pre_pitching>>5;
         break;
       case 6:
-        pitch[voice] = pre_pitching/16;
+        pitch[voice] = pre_pitching>>4;
         break;
       case 7:
-        pitch[voice] = pre_pitching/8;
+        pitch[voice] = pre_pitching>>3;
         break;
       case 8:
-        pitch[voice] = pre_pitching/4;
+        pitch[voice] = pre_pitching>>2;
         break;
       case 9:
-        pitch[voice] = pre_pitching/2;
+        pitch[voice] = pre_pitching>>1;
         break;
       case 10:
         pitch[voice] = pre_pitching;
         break;
-    }
+    }*/
+    uint16_t cv = 240 * MIDInote + detune * 12;
+    uint8_t octave = cv / 2880;
+    uint8_t pitch_index = (cv * 240) / 2880 - octave * 240;
+    //test_variable = One_Octave_Pitches[pitch_index];
+    uint16_t pre_pitching = One_Octave_Pitches[pitch_index];
+    pitch[voice] = (pre_pitching>>(10 - octave));
+
   }
+
 
   //*********************************************************************
   //  Setup Envelope [0-4]
@@ -217,7 +227,7 @@ public:
 
 		phase_accumulators[voice] = 0;
 		wave_amplitude[voice] = amplitude;
-		frequancy_tuning_word[divider] = pitch[voice];
+		//frequancy_tuning_word[divider] = pitch[voice];
 		noteTrigger[voice] = 1;
   }
 
