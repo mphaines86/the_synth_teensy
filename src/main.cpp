@@ -8,7 +8,7 @@ extern "C" {
 #define outputSelector 9
 #define CS 22
 #define WR 24
-#define NUM_SYNTH 16
+#define NUM_SYNTH 8
 int current_notes = 0;
 //byte notes[NUM_SYNTH];
 //int free_notes[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,};
@@ -26,6 +26,8 @@ void setup() {
 
     //pinMode(13, OUTPUT);
     //digitalWrite(13, LOW);
+
+    pinMode(A0 ,INPUT);
 
     Serial.begin(115200);
     pinMode(CS, OUTPUT);
@@ -69,7 +71,7 @@ void setup() {
 
 void loop()
 {
-    MIDI.read();
+  MIDI.read();
 }
 
 void handleNoteOn(byte channel, byte pitch, byte velocity)
@@ -103,5 +105,5 @@ void handleControlChange(byte channel, byte number, byte value){
 }
 
 void handleAftertouch(byte channel, byte value){
-    aftertouch = .25 * value;
+    aftertouch = .4 * value;
 }

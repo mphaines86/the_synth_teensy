@@ -3,30 +3,25 @@
  *
  * Created: 2/12/2016 9:25:22 PM
  *  Author: Michael Haines
- */ 
+ */
 #include "Envelope.h"
 
 inline void envelope_trigger(struct envelope_struct * env, uint16_t level){
 	env->output = 0;
 	env->phase = 0;
-	
-	//These values are only temporary
+
 	env->stage = ATTACK;
-	//env->attackIncreament = 65535;
-	//env->decayIncreament = 100;
-	//env->releaseIncreament = 26;
-	//env->sustainCV = 65535/2;
 	env->levelCV = level;
 	//******************************
-	
+
 	updateStageVariables(env, ATTACK);
 	envelope_update(env);
 }
 
 static inline void updateStageVariables(struct envelope_struct * envelope, EnvelopeStage_t stage){
-	
+
 	switch(stage){
-		
+
 		case ATTACK:
 			envelope->stageLevel = 0;
 			envelope->stageAdd = (envelope->stageLevel * envelope->levelCV) >> 16;
@@ -59,11 +54,11 @@ static inline void updateStageVariables(struct envelope_struct * envelope, Envel
 static void handlePhaseOverflow(struct envelope_struct * envelope){
 	envelope->phase = 0;
 	envelope->stageIncreament = 0;
-	
+
 	++envelope->stage;
-	
+
 	switch(envelope->stage){
-		
+
 		case DECAY:
 			envelope->output=envelope->levelCV;
 			updateStageVariables(envelope, DECAY);
@@ -78,7 +73,7 @@ static void handlePhaseOverflow(struct envelope_struct * envelope){
 			return;
 		default:
 		;
-		
+
 	}
 }
 
@@ -106,12 +101,12 @@ inline void envelope_setStage(struct envelope_struct * envelope, EnvelopeStage_t
 }
 
 inline void envelope_update(struct envelope_struct * env){
-	
+
 	if(env->phase>>16)
 		handlePhaseOverflow(env);
-  
-	uint8_t o = 0;
-	
+
+	uint16_t o = 0;
+
 	switch(env->stage){
 		case ATTACK:
 			o = (env->phase)>>8;
@@ -127,8 +122,8 @@ inline void envelope_update(struct envelope_struct * env){
 			env->stageAdd = 0
 		;
 	}
-	
+
 	env->output = ((o * env->stageMul) >> 16) + ((env->stageAdd)>>8);
-	
+
 	env->phase+=env->stageIncreament;
 }
