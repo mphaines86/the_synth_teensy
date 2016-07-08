@@ -1,5 +1,5 @@
 /*
- * IncFile1.h
+ * lfo.h
  *
  * Created: 3/12/2016 11:08:25 PM
  *  Author: Michael Haines
@@ -34,4 +34,4 @@ void lfo_setWave(struct lfo_struct * lfo, lfoShape_t shape);
 int16_t lfo_getOutput(struct lfo_struct * lfo);
 void lfo_update(struct lfo_struct * lfo);
 
-#endif /* INCFILE1_H_ */
+#endif

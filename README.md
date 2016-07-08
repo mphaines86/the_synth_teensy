@@ -1,6 +1,9 @@
 # the_synth_due
 
-This is a work in progress 8 voice synthesizer using referances from dzlonline the_synth code and referances from gligli's overcycler code. 
+This is a work in progress 8 voice synthesizer using referances from dzlonline the_synth code and referances from gligli's overcycler code.
+
+###Video Demonstration
+https://www.youtube.com/watch?v=YTVGzLrhA3o
 
 The code is built for the Arduino due, thus it is built for the Atmel SAM3X line of Arm processors. Current specifications of the synth include:
 

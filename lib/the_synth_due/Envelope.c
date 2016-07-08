@@ -1,5 +1,5 @@
 /*
- * CFile1.c
+ * Envelope.c
  *
  * Created: 2/12/2016 9:25:22 PM
  *  Author: Michael Haines
@@ -12,7 +12,6 @@ inline void envelope_trigger(struct envelope_struct * env, uint16_t level){
 
 	env->stage = ATTACK;
 	env->levelCV = level;
-	//******************************
 
 	updateStageVariables(env, ATTACK);
 	envelope_update(env);

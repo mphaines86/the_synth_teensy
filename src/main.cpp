@@ -3,9 +3,9 @@
 #include "Arduino.h"
 extern "C" {
   #include "synth.h"
+
 }
 
-#define outputSelector 9
 #define CS 22
 #define WR 24
 #define NUM_SYNTH 8
@@ -27,7 +27,7 @@ void setup() {
     //pinMode(13, OUTPUT);
     //digitalWrite(13, LOW);
 
-    pinMode(A0 ,INPUT);
+    pinMode(8 ,INPUT);
 
     Serial.begin(115200);
     pinMode(CS, OUTPUT);
@@ -37,11 +37,14 @@ void setup() {
     for(int i = 25; i < 42; i++){
         pinMode(i, OUTPUT);
     }
-    //pinMode(25, OUTPUT);
-    //pinMode(26, OUTPUT);
-    //pinMode(27, OUTPUT);
-    //pinMode(28, OUTPUT);
-    //pinMode(29, OUTPUT);
+
+    pinMode(12, OUTPUT);
+    pinMode(9, OUTPUT);
+
+    for(int i = 42; i<=50; i++){
+      pinMode(i, OUTPUT);
+    }
+
     pinMode(51, OUTPUT);
     pinMode(11, OUTPUT);
     pinMode(14, OUTPUT);
@@ -54,10 +57,10 @@ void setup() {
     digitalWrite(31, LOW);
     digitalWrite(41, LOW);
     digitalWrite(51, LOW);
+    //digitalWrite(12, HIGH);
 
-    REG_PIOD_OWER = 0xFFFF;
-    REG_PIOC_OWER = 0xFFFF;
-
+    //REG_PIOD_OWER = 0xFFFF;
+    //REG_PIOC_OWER = 0xFFFF;
     begin();
 
     MIDI.setHandleNoteOn(handleNoteOn);
@@ -67,11 +70,30 @@ void setup() {
     MIDI.setHandleAfterTouchChannel(handleAftertouch);
     MIDI.begin(MIDI_CHANNEL_OMNI);
 
+    pmc_enable_periph_clk((uint32_t)TC4_IRQn);
+    TC_Configure(TC1, 1, TC_CMR_WAVE | TC_CMR_WAVSEL_UP_RC | TC_CMR_TCCLKS_TIMER_CLOCK4);
+    uint32_t rc = VARIANT_MCK/128/500; //128 because we selected TIMER_CLOCK4 above
+    //TC_SetRA(TC1, 2, rc/2); //50% high, 50% low
+    TC_SetRC(TC1, 1, rc);
+    TC_Start(TC1, 1);
+    TC1->TC_CHANNEL[1].TC_IER=TC_IER_CPCS;
+    TC1->TC_CHANNEL[1].TC_IDR=~TC_IER_CPCS;
+    NVIC_EnableIRQ(TC4_IRQn);
+
+}
+
+void TC4_Handler(){
+		TC_GetStatus(TC1, 1);
+    MIDI.read();
+
+
 }
 
 void loop()
 {
-  MIDI.read();
+    while(1){
+        interfaceCheck();
+      }
 }
 
 void handleNoteOn(byte channel, byte pitch, byte velocity)

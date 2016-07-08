@@ -10,8 +10,7 @@
 #include "Envelope.h"
 #include "Osc.h"
 #include "lfo.h"
-//#include "pitch_tables.h"
-
+#include "interface.h"
 
 static struct{
 
@@ -20,6 +19,7 @@ static struct{
 	struct envelope_struct filterEnvs[SYNTH_VOICE_COUNT];
 	struct envelope_struct resonantEnvs[SYNTH_VOICE_COUNT];
 	struct lfo_struct pitchlfo[SYNTH_VOICE_COUNT];
+	struct lfo_struct filterlfo[SYNTH_VOICE_COUNT];
 
 	} synthesizer;
 
@@ -29,7 +29,7 @@ volatile uint16_t pitch[SYNTH_VOICE_COUNT];          //-Voice pitch
 volatile uint16_t cv_pitch[SYNTH_VOICE_COUNT];
 
 volatile unsigned char divider = 0;//-Sample rate decimator for envelope
-volatile uint16_t time_hz = 0;
+volatile uint32_t tik = 0;
 
 volatile int16_t Pitch_bend[SYNTH_VOICE_COUNT];
 
@@ -39,12 +39,12 @@ volatile int current_stage = 0;
 
 volatile int32_t test_variable = 0;
 
-const byte analog_pins[] = {ADC_CHANNEL_0, ADC_CHANNEL_1, ADC_CHANNEL_2, ADC_CHANNEL_3,
-ADC_CHANNEL_4, ADC_CHANNEL_5, ADC_CHANNEL_6, ADC_CHANNEL_7, ADC_CHANNEL_10,
-ADC_CHANNEL_11,};
-volatile int increament_analog_pins = 0;
-volatile uint16_t last_analog_value[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,};
+//******************************************************************************
+//These are temporary variables and bound to change.
+//******************************************************************************
 
+uint8_t osc_amp[] = {255, 255};
+uint16_t amp_out;
 uint8_t aftertouch = 0;
 uint8_t filter_cutoff = 0;
 uint16_t filterEnvs_amount = 65535;
@@ -55,14 +55,15 @@ uint8_t cv70 = 0;
 uint8_t cv2 = 0;
 uint8_t cv12 = 0;
 volatile uint16_t filter_total = 0;
-
+uint32_t time_stamps[] = {0, 0, 0, 0, 0, 0, 0, 0,};
 
  byte notes[SYNTH_VOICE_COUNT];
  int free_notes[] = {0, 1, 2, 3, 4, 5, 6, 7,};
 
-//*********************************************************************************************
+
+//******************************************************************************
 //  Audio driver interrupt
-//*********************************************************************************************
+//******************************************************************************
 
 void TC5_Handler(){
 	TC_GetStatus(TC1, 2);
@@ -72,24 +73,31 @@ void TC5_Handler(){
 	// Time division
 	//-------------------------------
 	divider++;
-  divider%=SYNTH_VOICE_COUNT;
+  if(!(divider%=SYNTH_VOICE_COUNT));
+		tik++;
 
 	//-------------------------------
 	// Volume and Filter envelope generator
 	//-------------------------------
-
 	envelope_update(&synthesizer.amplitudeEnvs[divider]);
 	envelope_update(&synthesizer.filterEnvs[divider]);
 	envelope_update(&synthesizer.resonantEnvs[divider]);
 
-	filter_total = (env_getOutput(&synthesizer.filterEnvs[0]) + filter_cutoff + aftertouch);
+	lfo_update(&synthesizer.filterlfo[divider]);
+	filter_total = (env_getOutput(&synthesizer.filterEnvs[0]) + filter_cutoff + aftertouch +
+	lfo_getOutput(&synthesizer.filterlfo[divider]));
 	if (filter_total > 255) filter_total = 255;
 
 	amplitude[divider] = env_getOutput(&synthesizer.amplitudeEnvs[divider]);
-	REG_PIOC_ODSR ^= 512;
-	REG_PIOC_ODSR = ((filter_total) << 1);
-	REG_PIOC_ODSR |= 512;
-	REG_PIOC_ODSR = (512 | ((env_getOutput(&synthesizer.resonantEnvs[0])) << 1));
+	REG_PIOC_CODR = (1 << 9);
+	REG_PIOC_OWDR = 0xFFFFFE00;
+	REG_PIOC_OWER = ((filter_total) << 1);
+	REG_PIOC_ODSR	= ((filter_total) << 1);
+	REG_PIOC_SODR = (1 << 9);
+	REG_PIOC_OWDR = 0xFFFFFE00;
+	amp_out = ((1 << 9) | ((env_getOutput(&synthesizer.resonantEnvs[0])) << 1));
+	REG_PIOC_OWER = amp_out;
+	REG_PIOC_ODSR = amp_out;
 
 	lfo_update(&synthesizer.pitchlfo[divider]);
 	uint16_t temp_pitch[2] = {synthesizer.oscillators[divider].cv_pitch[0] + lfo_getOutput(&synthesizer.pitchlfo[divider]),
@@ -100,25 +108,6 @@ void TC5_Handler(){
 	//  Synthesizer/audio mixer
 	//-------------------------------
 
-	/*for (i=0; i < SYNTH_VOICE_COUNT; i++){
-		phase_accumulators[i] += frequancy_tuning_word[i];
-		//pitch[i] = CVtoFrequancy(cv_pitch[i]);
-	}*/
-
-	/*for(i=0; i < SYNTH_VOICE_COUNT; i++){
-		//if (phase_accumulators[i] >= max_length[i] ){
-		//	if (loop_point[i] != 0) phase_accumulators[i] -= loop_point[i];
-		//	else phase_accumulators[i] = max_length[i];
-		//}
-		osc_update(&synthesizer.oscillators[i]);
-	}
-	int16_t output_sum = 0;
-	int16_t wave_temp = 0;
-	for (i=0; i<SYNTH_VOICE_COUNT; i++){
-		//wave_temp = 127 - *(wavs[i] + ((phase_accumulators[i]) >> 9));
-		//output_sum += ((wave_temp * amplitude[i]) >> 8);
-		output_sum += ((osc_getOutput(&synthesizer.oscillators[i]) * amplitude[i]) >> 8);
-	}*/
 	int j;
 	int16_t output_sum = 0;
 	for(i=0; i<SYNTH_VOICE_COUNT; i++){
@@ -127,81 +116,42 @@ void TC5_Handler(){
 					output_sum += ((osc_getOutput(&synthesizer.oscillators[i], j) * amplitude[i]) >> 8);
 			}
 	}
+	output_sum = 127 + ((output_sum) >> 3);
 
-	REG_PIOD_ODSR = 127 + ((output_sum) >> 3);
+	REG_PIOD_CODR = (1 << 9);
+	REG_PIOD_OWDR = 0xFFFFFF00;
+	REG_PIOD_OWER = output_sum;
+	REG_PIOD_ODSR	= output_sum;
+	REG_PIOD_SODR = (1 << 9);
+	REG_PIOD_OWDR = 0xFFFFFF00;
+	REG_PIOD_OWER = (parameterList[fltrResonance]>>4);
+	REG_PIOD_ODSR = (parameterList[fltrResonance]>>4);
+	//REG_PIOD_ODSR = 127 + ((output_sum) >> 3);
 
-	//test_variable = synthesizer.oscillators[0].pitch[0];
-	//frequancy_tuning_word[divider] = pitch[divider];
 	osc_updateFrequancyTuningWord(&synthesizer.oscillators[divider]);
 
-	time_hz++;
+}
+//------------------------------------------------------------------------------
+//Update the interface and check for any human interactions.
+//------------------------------------------------------------------------------
+
+void interfaceCheck(){
+	interfaceUpdate();
 }
 
-void TC4_Handler(){
-		TC_GetStatus(TC1, 1);
-		int i;
-		uint16_t value = adc_get_channel_value(ADC, analog_pins[increament_analog_pins]);
-		if (last_analog_value[increament_analog_pins] - value <= 4 && last_analog_value[increament_analog_pins] - value >= -4){
-			increament_analog_pins++;
-			increament_analog_pins%=10;
-			return;
-		}
-
-		switch(increament_analog_pins){
-				case 9:
-						test_variable = value;
-						filter_cutoff = value >> 4;
-						break;
-				case 8:
-						for (i = 0; i < SYNTH_VOICE_COUNT; i++){
-								if (value == 127){
-									envelope_setup(&synthesizer.filterEnvs[i],
-										65535, synthesizer.filterEnvs[i].decayIncreament,
-										synthesizer.filterEnvs[i].sustainCV, synthesizer.filterEnvs[i].releaseIncreament);
-								}
-								else{
-									envelope_setup(&synthesizer.filterEnvs[i],
-										value + 1, synthesizer.filterEnvs[i].decayIncreament,
-										synthesizer.filterEnvs[i].sustainCV, synthesizer.filterEnvs[i].releaseIncreament);
-								}
-						}
-						break;
-				case 0:
-						for (i = 0; i < SYNTH_VOICE_COUNT; i++){
-								envelope_setup(&synthesizer.filterEnvs[i],
-									synthesizer.filterEnvs[i].attackIncreament, value + 1,
-									synthesizer.filterEnvs[i].sustainCV, synthesizer.filterEnvs[i].releaseIncreament);
-							}
-							break;
-
-				case 1:
-						for (i = 0; i < SYNTH_VOICE_COUNT; i++){
-								envelope_setup(&synthesizer.filterEnvs[i],
-									synthesizer.filterEnvs[i].attackIncreament, synthesizer.filterEnvs[i].decayIncreament,
-									(16 * (value + 1)) - 1, synthesizer.filterEnvs[i].releaseIncreament);
-							}
-							break;
-				case 2:
-						for (i = 0; i < SYNTH_VOICE_COUNT; i++){
-								envelope_setup(&synthesizer.filterEnvs[i],
-									synthesizer.filterEnvs[i].attackIncreament, synthesizer.filterEnvs[i].decayIncreament,
-									synthesizer.filterEnvs[i].sustainCV, value + 1);
-							}
-							break;
-
-		}
-		increament_analog_pins++;
-		increament_analog_pins%=10;
-}
+//------------------------------------------------------------------------------
+// Anything below this line is temporary and subject to change with the
+// exception of function begin()
+//------------------------------------------------------------------------------
 
 void set_envelopes(){
 
 	int i = 0;
 	for(i = 0; i < SYNTH_VOICE_COUNT; i++){
-		envelope_setup(&synthesizer.amplitudeEnvs[i], 65535,65535,65535,15);
-		envelope_setup(&synthesizer.filterEnvs[i], 22,78,43234,1);
+		envelope_setup(&synthesizer.amplitudeEnvs[i], 37,65535,65535,16);
+		envelope_setup(&synthesizer.filterEnvs[i], 65535,65535,65535,1);
 		//envelope_setup(&synthesizer.resonantEnvs[i], 46,56,45333,19);
-		envelope_setup(&synthesizer.resonantEnvs[i], 65535,75,45345,19);
+		envelope_setup(&synthesizer.resonantEnvs[i], 65535,75,65535,12);
 	}
 
 }
@@ -211,8 +161,8 @@ void set_oscillators(){
 	int i = 0;
 	for(i = 0; i < SYNTH_VOICE_COUNT - 1; i++){
 		//setVoices(&synthesizer.oscillators[i], &string_C6, 0, 127);
-		osc_setWave(&synthesizer.oscillators[i], &Arr1, 0);
-		osc_setWave(&synthesizer.oscillators[i], &Arr1, 1);
+		osc_setWave(&synthesizer.oscillators[i], &DarkHaven, 0);
+		osc_setWave(&synthesizer.oscillators[i], &DarkHaven, 1);
 	}
 
 	//setVoices(&synthesizer.oscillators[7], &snare,0,127);
@@ -222,13 +172,18 @@ void set_oscillators(){
 void set_lfo(){
 	int i = 0;
 	for (i = 0; i< SYNTH_VOICE_COUNT; i++){
-		lfo_init(&synthesizer.pitchlfo[i], lfoSine, 47, 89);
+		lfo_init(&synthesizer.pitchlfo[i], lfoSine, 0, 0);
+		lfo_init(&synthesizer.filterlfo[i], lfoSine, 0, 0);
 
 	}
 }
 
 void begin()
 {
+			//initialize interface
+			interfaceInit();
+
+			//initialize interrupt
 			pmc_set_writeprotect(false);
 			pmc_enable_periph_clk((uint32_t)TC5_IRQn);
 			TC_Configure(TC1, 2, TC_CMR_WAVE | TC_CMR_WAVSEL_UP_RC | TC_CMR_TCCLKS_TIMER_CLOCK4);
@@ -240,81 +195,79 @@ void begin()
 			TC1->TC_CHANNEL[2].TC_IDR=~TC_IER_CPCS;
 			NVIC_EnableIRQ(TC5_IRQn);
 
-			pmc_enable_periph_clk((uint32_t)TC4_IRQn);
-			TC_Configure(TC1, 1, TC_CMR_WAVE | TC_CMR_WAVSEL_UP_RC | TC_CMR_TCCLKS_TIMER_CLOCK4);
-			rc = VARIANT_MCK/128/1000; //128 because we selected TIMER_CLOCK4 above
-			//TC_SetRA(TC1, 2, rc/2); //50% high, 50% low
-			TC_SetRC(TC1, 1, rc);
-			TC_Start(TC1, 1);
-			TC1->TC_CHANNEL[1].TC_IER=TC_IER_CPCS;
-			TC1->TC_CHANNEL[1].TC_IDR=~TC_IER_CPCS;
-			NVIC_EnableIRQ(TC4_IRQn);
-
-			pmc_enable_periph_clk(ID_ADC); // To use peripheral, we must enable clock distributon to it
-			adc_init(ADC, SystemCoreClock, ADC_FREQ_MAX, ADC_STARTUP_FAST); // initialize, set maximum posibble speed
-			adc_disable_interrupt(ADC, 0xFFFFFFFF);
-			adc_set_resolution(ADC, ADC_12_BITS);
-			adc_configure_power_save(ADC, 0, 0); // Disable sleep
-			adc_configure_timing(ADC, 0, ADC_SETTLING_TIME_3, 1); // Set timings - standard values
-			adc_set_bias_current(ADC, 1); // Bias current - maximum performance over current consumption
-			adc_stop_sequencer(ADC); // not using it
-			adc_disable_tag(ADC); // it has to do with sequencer, not using it
-			adc_disable_ts(ADC); // deisable temperature sensor
-			adc_configure_trigger(ADC, ADC_TRIG_SW, 1); // triggering from software, freerunning mode
-			adc_disable_all_channel(ADC);
-			int i = 0;
-			for (i=0; i < 10; i++){
-				adc_disable_channel_differential_input(ADC, analog_pins[i]);
-				adc_enable_channel(ADC, analog_pins[i]); // just one channel enabled
-			}
-			adc_start(ADC);
-
 			set_envelopes();
 			set_lfo();
 }
 
+void mTrigger(unsigned char voice,unsigned char MIDInote, uint16_t given_amplitude,
+	int8_t detune, struct Voice * given_voice,struct Voice * given_voice2)
+{
+
+	uint16_t temp_pitch[2] = {240 * (MIDInote - given_voice->pitch_from_C5),
+		 240 * (MIDInote - given_voice->pitch_from_C5) + detune * 12};
+	osc_trigger(&synthesizer.oscillators[voice], temp_pitch, MIDInote, osc_amp);
+	osc_setWave(&synthesizer.oscillators[voice], given_voice, 0);
+	osc_setWave(&synthesizer.oscillators[voice], given_voice2, 1);
+	cv_pitch[voice] = 240 * MIDInote;
+	lfo_trigger(&synthesizer.pitchlfo[voice]);
+	lfo_trigger(&synthesizer.filterlfo[voice]);
+	envelope_trigger(&synthesizer.amplitudeEnvs[voice], 65535);
+	envelope_trigger(&synthesizer.filterEnvs[0], filterEnvs_amount);
+	envelope_trigger(&synthesizer.resonantEnvs[0], given_amplitude);
+
+	noteTrigger[voice] = 1;
+}
+
 void note_trigger(byte channel, byte given_pitch, byte velocity){
 
-	int i = 0;
+	int8_t voice=-1;
+	uint8_t i = 0;
+	uint32_t oldest_time_stamp=UINT32_MAX;
 	for(i = 0; i < SYNTH_VOICE_COUNT; i++){
-			if(free_notes[i] > -1){
-					notes[i] = given_pitch;
-					//notes[i+1] = given_pitch; // Second Oscillator
-					switch(channel){
-						case 1:
-							mTrigger(i, given_pitch, velocity * 516, 0 + global_detune, &Arr1, 0);
-							//mTrigger(i, given_pitch, velocity * 516, 0 + global_detune, &Arr1, 1); // Second Oscillator
-							break;
-						case 2:
-							mTrigger(i, given_pitch, velocity * 516, 0 + global_detune, &Bassgt, 0);
-							//mTrigger(i, given_pitch, velocity * 516, 0 + global_detune, &Bassgt, 1);
-							break;
-						case 3:
-							mTrigger(i, given_pitch, velocity * 516, 0 + global_detune, &Strchoir, 0);
-							//mTrigger(i, given_pitch, velocity * 516, 0 + global_detune, &cello3, 1);
-							break;
-						case 4:
-							mTrigger(i, given_pitch, velocity * 516, 0 + global_detune, &EuroBell1, 0);
-							//mTrigger(i, given_pitch, velocity * 516, 1 + global_detune, &EuroBell2, 1);
-							break;
-						case 5:
-							mTrigger(i, given_pitch, velocity * 516, 0 + global_detune, &bikodrum, 0);
-							//mTrigger(i, given_pitch, velocity * 516, 1 + global_detune, &bikodrum, 1);
-							break;
-						case 6:
-							mTrigger(i, given_pitch, velocity * 516, 0 + global_detune, &saw, 0);
-							//mTrigger(i, given_pitch, velocity * 516, 1 + global_detune, &saw, 1);
-							break;
-						default:
-							mTrigger(i, given_pitch, velocity * 516, 0 + global_detune, &EuroBell1, 0);
-							//mTrigger(i, given_pitch, velocity * 516, 1 + global_detune, &EuroBell1, 1); // Second Oscillator
-							break;
-					}
-					free_notes[i] = -1;
-					current_stage += 1;
+		if(free_notes[i] > -1){
+			test_variable = env_getStage(&synthesizer.amplitudeEnvs[i]);
+			if (env_getStage(&synthesizer.amplitudeEnvs[i]) == DEAD){
+					voice = i;
 					break;
 			}
+			if(time_stamps[i]<oldest_time_stamp){
+					oldest_time_stamp=time_stamps[i];
+					voice = i;
+			}
+		}
 	}
+	if (voice==-1){
+		return;
+	}
+	notes[voice] = given_pitch;
+	free_notes[voice] = -1;
+	current_stage += 1;
+	switch(channel){
+		case 1:
+			mTrigger(voice, given_pitch, velocity * 516, 0 + global_detune, &DarkHaven, &DarkHaven);
+			break;
+		case 2:
+			mTrigger(voice, given_pitch, velocity * 516, 0 + global_detune, &Bassgt, &Bassgt);
+			break;
+		case 3:
+			mTrigger(voice, given_pitch, velocity * 516, 0 + global_detune, &DarkHaven, &saw);
+			break;
+		case 4:
+			mTrigger(voice, given_pitch, velocity * 516, 0 + global_detune, &EuroBell1, &EuroBell2);
+			break;
+		case 5:
+			mTrigger(voice, given_pitch, velocity * 516, 0 + global_detune, &bikodrum, &bikodrum);
+			break;
+		case 6:
+			mTrigger(voice, given_pitch, velocity * 516, 0 + global_detune, &saw, &saw);
+			break;
+		case 7:
+			mTrigger(voice, given_pitch, velocity * 516, 0 + global_detune, &guitar1, &guitar1);
+			break;
+		default:
+			mTrigger(voice, given_pitch, velocity * 516, 0 + global_detune, &EuroBell1, &EuroBell1);
+			break;
+		}
 }
 
 
@@ -324,14 +277,13 @@ void NoteRelease(byte channel, byte given_pitch, byte velocity){
 			if(notes[i] == given_pitch){
 				  noteDeath[i] = 1;
 					free_notes[i] = i;
-
+					time_stamps[i] = tik;
 
 					envelope_setStage(&synthesizer.amplitudeEnvs[i],RELEASE);
 		}
 
 	}
-	//REMOVE
-	//envelope_setStage(&synthesizer.amplitudeEnvs[channel],RELEASE);
+
 	current_stage -= 1;
 	if (current_stage <= 0){
 		envelope_setStage(&synthesizer.filterEnvs[0],RELEASE);
@@ -340,70 +292,43 @@ void NoteRelease(byte channel, byte given_pitch, byte velocity){
 	}
 }
 
-void set_pitch(unsigned char voice,unsigned char MIDInote, int8_t detune)
-{
-	cv_pitch[voice] = 240 * MIDInote + detune * 12;
-	pitch[voice] = CVtoFrequancy(cv_pitch[voice]);
-
-	//osc_setAllPitch(&synthesizer.oscillators[voice], cv_pitch[voice]);
-
-}
-
-void mTrigger(unsigned char voice,unsigned char MIDInote, uint16_t given_amplitude,
-	int8_t detune, struct Voice * given_voice, byte oscillator)
-{
-
-	uint16_t temp_pitch[2] = {240 * (MIDInote - given_voice->pitch_from_C5),
-		 240 * (MIDInote - given_voice->pitch_from_C5) + detune * 12};
-	osc_trigger(&synthesizer.oscillators[voice], temp_pitch, MIDInote);
-	osc_setWave(&synthesizer.oscillators[voice], given_voice, 0);
-	osc_setWave(&synthesizer.oscillators[voice], given_voice, 1);
-	cv_pitch[voice] = 240 * MIDInote;
-	lfo_trigger(&synthesizer.pitchlfo[voice]);
-	envelope_trigger(&synthesizer.amplitudeEnvs[voice], given_amplitude);
-	envelope_trigger(&synthesizer.filterEnvs[0], filterEnvs_amount);
-	envelope_trigger(&synthesizer.resonantEnvs[0], resonantEnvs_amount);
-
-	noteTrigger[voice] = 1;
-}
-
 void ControlChange(byte number, byte value){
 		int i = 0;
 		switch(number){
 			case 11:
 					filter_cutoff = ((value) * 2);
 					break;
-			case 2:
+			case 5:
 					cv2 = value;
 					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
-							lfo_setRate(&synthesizer.pitchlfo[i], cv2 * cv70 * 2);
-						}
-						break;
-			case 70:
-					cv70 = value;
-					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
-							lfo_setRate(&synthesizer.pitchlfo[i], cv2 * cv70 * 2);
-						}
-						break;
-			case 12:
-					cv12 = value;
-					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
-							lfo_init(&synthesizer.pitchlfo[i], synthesizer.pitchlfo[i].shape, cv12 * cv7 * 2, synthesizer.pitchlfo[i].rate);
-						}
-						break;
-			case 7:
-					cv7 = value;
-					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
-							lfo_init(&synthesizer.pitchlfo[i], synthesizer.pitchlfo[i].shape, cv12 * cv7 * 2, synthesizer.pitchlfo[i].rate);
+							lfo_setRate(&synthesizer.filterlfo[i], cv2 * cv70 * 2);
 						}
 						break;
 			case 13:
+					cv70 = value;
+					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
+							lfo_setRate(&synthesizer.filterlfo[i], cv2 * cv70 * 2);
+						}
+						break;
+			case 0:
+					cv12 = value;
+					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
+							lfo_init(&synthesizer.filterlfo[i], synthesizer.filterlfo[i].shape, cv12 * cv7 * 2, synthesizer.filterlfo[i].rate);
+						}
+						break;
+			case 2: //7
+					cv7 = value;
+					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
+							lfo_init(&synthesizer.filterlfo[i], synthesizer.filterlfo[i].shape, cv7 * 2, synthesizer.filterlfo[i].rate);
+						}
+						break;
+			case 84:
 					global_detune = ((value + 1) * .5) - 32;
 					break;
-			case 5:
+			case 70:
 					filterEnvs_amount = (512 * (value + 1)) - 1;
 					break;
-			case 10:
+			case 15: //10
 					resonantEnvs_amount = (512 * (value + 1)) - 1;
 					break;
 			case 71:
@@ -476,5 +401,83 @@ void ControlChange(byte number, byte value){
 								synthesizer.filterEnvs[i].sustainCV, (12 * (value )) + 1);
 						}
 						break;
+		}
+}
+
+void potChange(byte number){
+	int i;
+	switch (number) {
+			case 2:
+					osc_amp[0] = (parameterList[oscAVol] >> 4);
+					break;
+			case 5:
+					osc_amp[1] = (parameterList[oscBVol] >> 4);
+					break;
+			case 7:
+					global_detune = (((parameterList[oscDetune] >> 5) + 1) * .5) - 32;
+					break;
+			case 8:
+					filter_cutoff = (parameterList[fltrCutoff] >> 4);
+					break;
+			//case 9:
+			//		break;
+			case 10:
+					filterEnvs_amount = (parameterList[fltrEnvMnt] * 16);
+					break;
+			//case 11:
+			//		break;
+			case 12:
+			case 13:
+			case 14:
+			case 15:
+					if (parameterList[number] >= 4080){
+							parameterList[number] = 65535;
+						}
+					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
+							envelope_setup(&synthesizer.filterEnvs[i],parameterList[fltrAtt] >> 2, parameterList[fltrDec] >> 2,
+								16 * parameterList[fltrSus], parameterList[fltrRel] >> 2);
+					}
+					break;
+			case 16:
+			case 17:
+			case 18:
+			case 19:
+					if (parameterList[number] >= 4080){
+							parameterList[number] = 65535;
+						}
+					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
+							envelope_setup(&synthesizer.amplitudeEnvs[i],parameterList[AmpAtt] >> 2, parameterList[AmpDec] >> 2,
+								16 * parameterList[AmpSus], parameterList[AmpRel] >> 2);
+					}
+					break;
+			case 20:
+			case 21:
+			case 22:
+			case 23:
+					if (parameterList[number] >= 4080){
+							parameterList[number] = 65535;
+						}
+					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
+							envelope_setup(&synthesizer.resonantEnvs[i],parameterList[AuxAtt] >> 2, parameterList[AuxDec] >> 2,
+								16 * parameterList[AuxSus], parameterList[AuxRel] >> 2);
+					}
+					break;
+			case 24:
+			case 25:
+			case 26:
+			case 27:
+					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
+							lfo_init(&synthesizer.pitchlfo[i], parameterList[lfoAShape]/1000, parameterList[lfoAPitch], parameterList[lfoARate]);
+						}
+					break;
+
+			case 28:
+			case 29:
+			case 30:
+			case 31:
+					for (i = 0; i < SYNTH_VOICE_COUNT; i++){
+							lfo_init(&synthesizer.filterlfo[i], parameterList[lfoBShape]/1000, parameterList[lfoBPitch] >> 4, parameterList[lfoBRate]);
+						}
+					break;
 		}
 }

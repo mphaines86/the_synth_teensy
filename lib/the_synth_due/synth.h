@@ -22,7 +22,7 @@ extern volatile uint16_t cv_pitch[SYNTH_VOICE_COUNT];
 
 extern volatile unsigned char divider;//-Sample rate decimator for envelope
 extern volatile uint16_t time_hz;
-extern volatile unsigned char tik;
+extern volatile uint32_t tik;
 extern volatile unsigned char output_mode;
 
 extern volatile uint16_t wave_amplitude[SYNTH_VOICE_COUNT];
@@ -50,17 +50,13 @@ extern volatile uint16_t filter_total;
 //*********************************************************************************************
 //  Audio driver interrupt
 //*********************************************************************************************
-void set_envelopes();
-void set_oscillators();
-void set_lfo();
-void TC5_Handler();
+
 void begin();
-void mTrigger(unsigned char voice,unsigned char MIDInote, uint16_t given_amplitude,
-  int8_t detune, struct Voice * given_voice, byte oscillator);
+void interfaceCheck();
 void note_trigger(byte channel, byte pitch, byte velocity);
 void NoteRelease(byte channel, byte pitch, byte velocity);
-void set_pitch(unsigned char voice, unsigned char MIDInote, int8_t detune);
 void ControlChange(byte number, byte value);
+void potChange(byte number);
 
 
 

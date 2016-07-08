@@ -1,9 +1,9 @@
 /*
- * IncFile1.h
+ * Envelope.h
  *
  * Created: 2/12/2016 9:25:47 PM
  *  Author: Michael Haines
- */ 
+ */
 
 
 #ifndef ENVELOPE_H
@@ -12,11 +12,11 @@
 #include "synth.h"
 
 typedef enum {
-	ATTACK = 1,
-	DECAY = 2,
-	SUSTAIN = 3,
-	RELEASE = 4,
-	DEAD = 0,
+	ATTACK = 0,
+	DECAY = 1,
+	SUSTAIN = 2,
+	RELEASE = 3,
+	DEAD = 4,
 	NUM_SEGMENTS,
 } EnvelopeStage_t;
 
@@ -24,13 +24,13 @@ struct envelope_struct {
 	uint32_t stageIncreament;
 	uint32_t phase;
 	uint32_t attackIncreament, decayIncreament, releaseIncreament;
-	
+
 	uint16_t sustainCV,levelCV;
 	uint16_t attackCV,decayCV,releaseCV;
 	uint16_t stageLevel,stageAdd,stageMul;
 	uint16_t speedShift;
 	uint16_t output;
-	
+
 	EnvelopeStage_t stage;
 	};
 
@@ -44,4 +44,4 @@ EnvelopeStage_t env_getStage(struct envelope_struct * envelope);
 void envelope_update(struct envelope_struct * envelope);
 
 
-#endif /* INCFILE1_H_ */
+#endif
