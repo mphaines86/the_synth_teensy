@@ -5,6 +5,7 @@ This is a work in progress 8 voice synthesizer using referances from dzlonline t
 ###Video Demonstration
 https://www.youtube.com/watch?v=YTVGzLrhA3o
 
+##Technical Details
 The code is built for the Arduino due, thus it is built for the Atmel SAM3X line of Arm processors. Current specifications of the synth include:
 
 * 8 voices with two oscillators per voice
@@ -18,3 +19,16 @@ The code is built for the Arduino due, thus it is built for the Atmel SAM3X line
 Currently the TLC7528 8-bit parallel DAC is being used to transfer data into analog voltages, but any equivelant DAC will work. The Wave data is written to the first 8 bytes of the REG_PIOD_ODSR register while analog voltages for the filter and VCA are written to bytes 1-9 of register REG_PIOC_ODSR.
 
 This code is currently a work in progresses so it is not a gurentee that everything will be in working order.
+
+##Referances
+Below are all links to resources/codes that I have referanced through out the project.
+  
+<http://mutable-instruments.net/shruthi1/build/smr4mkII>
+
+<https://github.com/FortySevenEffects/arduino_midi_library>
+
+<https://github.com/gligli/overcycler>
+
+<https://github.com/dzlonline/the_synth>
+
+<https://github.com/michaelfolz/LCD_HD44780>
