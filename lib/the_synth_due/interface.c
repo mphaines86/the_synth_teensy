@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "interface.h"
-#include "../the_synth_due/system/HD44780.h"
+#include "system/HD44780.h"
 
 #define TIME_BUFFER 100
 #define DEBOUNCE_MAX 4
@@ -22,7 +22,7 @@ static struct {
 } interface;
 
 enum interfaceParamType_e {
-  parameterNone=0, parameterCont,
+  parameterNone=0, parameterCont, parameterStep
 };
 
 struct interfaceParam_s{
@@ -33,19 +33,18 @@ struct interfaceParam_s{
   const char * values[8];
 };
 
-
 const struct interfaceParam_s interfaceParameters[4][10] = {
     {
         {.type=parameterCont, .number=oscAfreq, .shortName="AFrq", .longName="Osc A Frequancy"},
         {.type=parameterCont, .number=oscAVol, .shortName="AVol", .longName="Osc A Volume"},
         {.type=parameterCont, .number=oscAMod, .shortName="Amod", .longName="Osc A Modulation"},
-        {.type=parameterNone},
-        {.type=parameterNone},
+        {.type=parameterCont, .number=oscSync, .shortName="Sync", .longName="Osc Sync"},
+        {.type=parameterStep, .number=spOscAWave, .shortName="Awav", .longName="Osc A Waveform"},
         {.type=parameterCont, .number=oscBfreq, .shortName="BFrq", .longName="Osc B Frequancy"},
         {.type=parameterCont, .number=oscBVol, .shortName="BVol", .longName="Osc B Volume"},
         {.type=parameterCont, .number=oscBMod, .shortName="Bmod", .longName="Osc B Modulation"},
         {.type=parameterCont, .number=oscDetune, .shortName="Dtne", .longName="Osc Detune"},
-        {.type=parameterNone},
+        {.type=parameterStep, .number=spOscBWave,.shortName="Bwav", .longName="Osc B Waveform"},
     },
     {
         {.type=parameterCont, .number=fltrCutoff, .shortName="FCut", .longName="Filter Cutoff"},
@@ -72,15 +71,15 @@ const struct interfaceParam_s interfaceParameters[4][10] = {
         {.type=parameterNone},
     },
     {
-        {.type=parameterCont, .number=lfoAPitch, .shortName="AFrq", .longName="LFO A Frequancy"},
+        {.type=parameterCont, .number=lfoAPitch, .shortName="AAmp", .longName="LFO A Amplitude"},
         {.type=parameterCont, .number=lfoARate, .shortName="ARte", .longName="LFO A Rate"},
-        {.type=parameterCont, .number=lfoAAmount, .shortName="AAmt", .longName="LFO A Amount"},
         {.type=parameterCont, .number=lfoAShape, .shortName="AShp", .longName="LFO A Shape"},
-        {.type=parameterNone},
-        {.type=parameterCont, .number=lfoBPitch, .shortName="BFrq", .longName="LFO B Frequancy"},
+        {.type=parameterCont, .number=lfoBPitch, .shortName="BAmp", .longName="LFO B Amplitude"},
         {.type=parameterCont, .number=lfoBRate, .shortName="BRte", .longName="LFO B Rate"},
-        {.type=parameterCont, .number=lfoBAmount, .shortName="BAmt", .longName="LFO B Amount"},
         {.type=parameterCont, .number=lfoBShape, .shortName="BShp", .longName="LFO B Shape"},
+        {.type=parameterCont, .number=rampAmount, .shortName="RAmt", .longName="Ramp Amplitude"},
+        {.type=parameterCont, .number=rampRate, .shortName="RRte", .longName="Ramp Rate"},
+        {.type=parameterNone},
         {.type=parameterNone},
     },
 };
@@ -121,25 +120,38 @@ static void handleUserInput(uint8_t input){
 
     const struct interfaceParam_s * parameter;
     parameter = &interfaceParameters[interface.page][input];
-
-    if (parameter->type == parameterNone)
+    uint8_t current_type;
+    static char dv[10]={0};
+    switch(parameter->type){
+      case parameterNone:
         return;
-    else{
-        parameterList[parameter->number]= interface.pot_value[input];
-        if(!(interface.temp_parameter == parameter->number)){
-          static char dx[20]={0};
-          sprintf(dx,"%-20s", parameter->longName);
-          cposition(0, 2);
-          putsLCD(dx);
-          interface.temp_parameter = parameter->number;
-        }
-        static char dv[10]={0};
-        sprintf(dv,"%4d",parameterList[parameter->number]);
+      case parameterCont:
+        cpParameterList[parameter->number]= interface.pot_value[input];
+        current_type = 0;
+        sprintf(dv,"%4d",cpParameterList[parameter->number]);
         cposition(0, 3);
         putsLCD(dv);
-        potChange(parameter->number);
-      }
-}
+        potChange(parameter->number, current_type);
+        break;
+      case parameterStep:
+        spParameterList[parameter->number]= interface.pot_value[input];
+        current_type = 1;
+        sprintf(dv,"%4d",spParameterList[parameter->number]);
+        cposition(0, 3);
+        putsLCD(dv);
+        potChange(parameter->number, current_type);
+        break;
+    }
+
+    if(interface.temp_parameter != parameter->number){
+      static char dx[20]={0};
+      sprintf(dx,"%-20s", parameter->longName);
+      cposition(0, 2);
+      putsLCD(dx);
+      interface.temp_parameter = parameter->number;
+    }
+  }
+
 
 static void readPotentiometers(){
     uint32_t new_value;
@@ -172,7 +184,7 @@ static void readButton(){
     //uint16_t reading = REG_PIOC_PDSR>>22;
 
     uint8_t output = debounce(22, 0);
-
+    //test_variable++;
     if(!interface.lastButtonPress[0] && output){
         interface.page++;
         interface.page%=4;
@@ -193,7 +205,7 @@ static void readButton(){
       }
 
       interface.lastButtonPress[1] = output;
-
+      //test_variable = interface.page;
 }
 
 

@@ -8,21 +8,30 @@
 #define POT_THRESHOLD 12
 
 typedef enum {
-  oscAfreq=1, oscAVol=2, oscAMod=3,
-  oscBfreq=4, oscBVol=5, oscBMod=6, oscDetune=7,
-  fltrCutoff=8, fltrResonance=9, fltrEnvMnt=10, fltrMod=1,
-  fltrAtt=12, fltrDec=13, fltrSus=14, fltrRel=15,
-  AmpAtt=16, AmpDec=17, AmpSus=18, AmpRel=19,
-  AuxAtt=20, AuxDec=21, AuxSus=22, AuxRel=23,
-  lfoAPitch=24, lfoARate=25, lfoAAmount=26, lfoAShape=27,
-  lfoBPitch=28, lfoBRate=29, lfoBAmount=30, lfoBShape=31,
+  oscAfreq=1, oscAVol=2, oscAMod=3, oscSync=4,
+  oscBfreq=5, oscBVol=6, oscBMod=7, oscDetune=8,
+  fltrCutoff=9, fltrResonance=10, fltrEnvMnt=11, fltrMod=12,
+  fltrAtt=13, fltrDec=14, fltrSus=15, fltrRel=16,
+  AmpAtt=17, AmpDec=18, AmpSus=19, AmpRel=20,
+  AuxAtt=21, AuxDec=22, AuxSus=23, AuxRel=24,
+  lfoAPitch=25, lfoARate=26, lfoAAmount=27, lfoAShape=28,
+  lfoBPitch=29, lfoBRate=30, lfoBAmount=31, lfoBShape=32,
+  rampRate=33, rampAmount=34,
 
-  count
+  cpCount
 
-} parameters_t;
+} continousParameters_t;
 
-uint16_t parameterList[count];
+typedef enum {
+  spOscAWave=1, spOscBWave=2, spOscSync=3,
+  spLfoAShape=4, spLfoBShape=5, spLfoAspeed=6, spLfoBspeed=7,
 
+  spCount
+
+} steppedParameter_t;
+
+uint16_t cpParameterList[cpCount];
+uint16_t spParameterList[spCount];
 void interfaceInit();
 void interfaceUpdate();
 

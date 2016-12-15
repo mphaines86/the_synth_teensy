@@ -28,6 +28,7 @@ void setup() {
     //digitalWrite(13, LOW);
 
     pinMode(8 ,INPUT);
+    pinMode(7 ,INPUT);
 
     Serial.begin(115200);
     pinMode(CS, OUTPUT);
@@ -79,6 +80,7 @@ void setup() {
     TC1->TC_CHANNEL[1].TC_IER=TC_IER_CPCS;
     TC1->TC_CHANNEL[1].TC_IDR=~TC_IER_CPCS;
     NVIC_EnableIRQ(TC4_IRQn);
+    //delay(3000);
 
 }
 
@@ -86,14 +88,15 @@ void TC4_Handler(){
 		TC_GetStatus(TC1, 1);
     MIDI.read();
 
-
 }
 
 void loop()
 {
-    while(1){
-        interfaceCheck();
-      }
+    //while(1){
+    //Serial.println(test_variable);
+    interfaceCheck();
+
+      //}
 }
 
 void handleNoteOn(byte channel, byte pitch, byte velocity)

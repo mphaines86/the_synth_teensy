@@ -9,15 +9,13 @@
 #ifndef SYNTH_H
 #define SYNTH_H
 
-#define SYNTH_VOICE_COUNT 8
+#define SYNTH_VOICE_COUNT 6
 #define FS 32000
 
 #include <Arduino.h>
 
 
 extern volatile uint16_t amplitude[SYNTH_VOICE_COUNT];           //-Wave amplitudes [0-255]
-extern volatile uint16_t pitch[SYNTH_VOICE_COUNT];          //-Voice pitch
-
 extern volatile uint16_t cv_pitch[SYNTH_VOICE_COUNT];
 
 extern volatile unsigned char divider;//-Sample rate decimator for envelope
@@ -25,7 +23,6 @@ extern volatile uint16_t time_hz;
 extern volatile uint32_t tik;
 extern volatile unsigned char output_mode;
 
-extern volatile uint16_t wave_amplitude[SYNTH_VOICE_COUNT];
 extern volatile int16_t Pitch_bend[SYNTH_VOICE_COUNT];
 extern volatile int noteTrigger[SYNTH_VOICE_COUNT];
 extern volatile int noteDeath[SYNTH_VOICE_COUNT];
@@ -36,9 +33,6 @@ extern int free_notes[SYNTH_VOICE_COUNT];
 extern byte notes[SYNTH_VOICE_COUNT];
 
 extern uint8_t aftertouch;
-extern uint8_t filter_cutoff;
-extern uint16_t filterEnvs_amount;
-extern uint16_t resonantEnvs_amount;
 extern int8_t global_detune;
 
 extern uint8_t cv7;
@@ -56,7 +50,7 @@ void interfaceCheck();
 void note_trigger(byte channel, byte pitch, byte velocity);
 void NoteRelease(byte channel, byte pitch, byte velocity);
 void ControlChange(byte number, byte value);
-void potChange(byte number);
+void potChange(byte number, uint8_t parameter_type);
 
 
 

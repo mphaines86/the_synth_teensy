@@ -6,7 +6,7 @@
  */
 #include "Envelope.h"
 
-inline void envelope_trigger(struct envelope_struct * env, uint16_t level){
+inline void envelope_trigger(struct envelope_struct * env, uint32_t level){
 	env->output = 0;
 	env->phase = 0;
 
@@ -101,18 +101,18 @@ inline void envelope_setStage(struct envelope_struct * envelope, EnvelopeStage_t
 
 inline void envelope_update(struct envelope_struct * env){
 
-	if(env->phase>>16)
+	if(env->phase>>20)
 		handlePhaseOverflow(env);
 
 	uint16_t o = 0;
 
 	switch(env->stage){
 		case ATTACK:
-			o = (env->phase)>>8;
+			o = (env->phase)>>12;
 			break;
 		case DECAY:
 		case RELEASE:
-			o = 255 - ((env->phase)>>8);
+			o = 255 - ((env->phase)>>12);
 			break;
 		case SUSTAIN:
 			o = (env->sustainCV)>>8;

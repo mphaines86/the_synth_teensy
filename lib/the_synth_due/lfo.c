@@ -50,7 +50,7 @@ void lfo_update(struct lfo_struct * lfo){
     lfo->frequancy_tuning_word = lfo->rate;
     lfo->phase_accumulators += lfo->frequancy_tuning_word;
     int16_t wave_temp;
-    wave_temp = 127 - *(lfo->waveform + ((lfo->phase_accumulators) >> 8));
+    wave_temp = *(lfo->waveform + ((lfo->phase_accumulators) >> 8));
     lfo->output = ((wave_temp * lfo->level) >> 8);
 
 

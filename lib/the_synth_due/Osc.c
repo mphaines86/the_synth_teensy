@@ -24,7 +24,7 @@ void osc_trigger(struct oscillator_struct * osc, uint16_t pitch[NUMBER_OF_OSCILL
 		//uint16_t pitch = 240 * note;
 		for (i = 0; i < NUMBER_OF_OSCILLATORS; i++){
 				osc->oscillator_mix[i] = osc_amp[i];
-				osc->cv_pitch[i] = pitch[i];
+				osc->cv_pitch[i] = (pitch[i] + osc->all_wavs[i][osc->note]->pitch_from_C5) * 240;
 				osc->pitch[i] = CVtoFrequancy(pitch[i]);
 				osc->phase_accumulator[i]= 0;
 		}
@@ -44,16 +44,16 @@ void osc_setPitch(struct oscillator_struct * osc, uint16_t value, byte oscillato
 		osc->pitch[oscillator] = CVtoFrequancy(value);
 }
 
-void osc_setAllPitch(struct oscillator_struct * osc, uint16_t value[NUMBER_OF_OSCILLATORS]){
-		byte i;
-		for (i = 0; i < NUMBER_OF_OSCILLATORS; i++){
-				osc->pitch[i] = CVtoFrequancy(value[i]);
-		}
-}
-
-
 void osc_setWave(struct oscillator_struct * osc, struct Voice * set_voice, byte oscillator){
 		osc->all_wavs[oscillator][osc->note] = set_voice;
+}
+
+void osc_setSync(struct oscillator_struct * osc, oscSyncMode_t sync){
+	osc->sync = sync;
+}
+
+void osc_setAmplitude(struct oscillator_struct * osc, uint16_t amplitude){
+	osc->amplitude = amplitude;
 }
 
 void osc_updateFrequancyTuningWord(struct oscillator_struct * osc){
@@ -62,29 +62,36 @@ void osc_updateFrequancyTuningWord(struct oscillator_struct * osc){
 		osc->frequancy_tuning_word[i] = osc->pitch[i];
 	}
 }
-int16_t osc_getOutput(struct oscillator_struct * osc, byte oscillator){
-	return osc->output[oscillator];
+int16_t osc_getOutput(struct oscillator_struct * osc){
+	return osc->output;
 }
 
 void osc_update(struct oscillator_struct *osc){
 
-		int i;
+		int16_t output = 0;
+		uint8_t i;
 		for(i = 0; i < NUMBER_OF_OSCILLATORS; i ++){
 				osc->phase_accumulator[i] += osc->frequancy_tuning_word[i];
 
 				//Check to see if we reached the end of the wave
 				if (osc->phase_accumulator[i] >= osc->all_wavs[i][osc->note]->max_length) {
-					if (osc->all_wavs[i][osc->note]->loop_point != 0){
+					if (osc->all_wavs[i][osc->note]->loop_point){
 						osc->phase_accumulator[i] -= osc->all_wavs[i][osc->note]->loop_point;
-
+						if (i==0 && osc->sync){
+							test_variable++;
+							osc->phase_accumulator[1]=0;
+						}
 					}
 					else{
 						osc->phase_accumulator[i] = osc->all_wavs[i][osc->note]->max_length;
+
 					}
 				}
-				//uint8_t amp = osc->oscillator_mix[i];
 
-				osc->output[i] = (((127 - *(osc->all_wavs[i][osc->note]->wave +
-					((osc->phase_accumulator[i]) >> 9))) * osc->oscillator_mix[i]) >> 8);
+				output += (((((127 - *(osc->all_wavs[i][osc->note]->wave +
+					((osc->phase_accumulator[i]) >> 9))) * osc->oscillator_mix[i]) >> 8) *
+					osc->amplitude) >> 8);
+
 		}
+		osc->output = output;
 }
