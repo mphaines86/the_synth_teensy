@@ -2,10 +2,10 @@
 
 This is a work in progress 8 voice synthesizer using referances from dzlonline the_synth code and referances from gligli's overcycler code.
 
-###Video Demonstration
+### Video Demonstration
 https://www.youtube.com/watch?v=YTVGzLrhA3o
 
-##Technical Details
+## Technical Details
 The code is built for the Arduino due, thus it is built for the Atmel SAM3X line of Arm processors. Current specifications of the synth include:
 
 * 8 voices with two oscillators per voice
@@ -20,7 +20,7 @@ Currently the TLC7528 8-bit parallel DAC is being used to transfer data into ana
 
 This code is currently a work in progresses so it is not a gurentee that everything will be in working order.
 
-##Referances
+## Referances
 Below are all links to resources/codes that I have referanced through out the project.
   
 <http://mutable-instruments.net/shruthi1/build/smr4mkII>
