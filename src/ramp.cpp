@@ -1,6 +1,6 @@
 #include "ramp.h"
 
-static inline void updateStageVariables(struct ramp_struct * ramp, RampStage_t stage){
+/*static inline void updateStageVariables(struct ramp_struct * ramp, RampStage_t stage){
 
 	switch(stage){
 
@@ -25,56 +25,58 @@ static inline void updateStageVariables(struct ramp_struct * ramp, RampStage_t s
 inline void ramp_trigger(struct ramp_struct * ramp, uint32_t level){
 	ramp->output = 0;
 	ramp->phase = 0;
-  ramp->stageAdd = 0;
+    ramp->stageAdd = 0;
 	ramp->stage = RAMP_ATTACK;
 	ramp->levelCV = level;
 
 	updateStageVariables(ramp, RAMP_ATTACK);
 	ramp_update(ramp);
-}
+}*/
 
 static void handlePhaseOverflow(struct ramp_struct * ramp){
 	ramp->phase = 0;
 	ramp->stageIncreament = 0;
 
-	++ramp->stage;
+	auto stage = static_cast<uint8_t>(ramp->stage) + 1;
 
-	switch(ramp->stage){
+
+	switch(stage){
     case RAMP_SUSTAIN:
-      updateStageVariables(ramp, RAMP_SUSTAIN);
-      return;
-		case RAMP_DEAD:
-			ramp->stage=RAMP_DEAD;
-			ramp->output = 0;
-			updateStageVariables(ramp, RAMP_DEAD);
-			return;
-		default:
+    	ramp->stage = RAMP_SUSTAIN;
+        updateStageVariables(ramp, RAMP_SUSTAIN);
+        return;
+    case RAMP_DEAD:
+        ramp->stage=RAMP_DEAD;
+        ramp->output = 0;
+        updateStageVariables(ramp, RAMP_DEAD);
+        return;
+    default:
 		;
 
 	}
 }
 
-inline RampStage_t ramp_getStage(struct ramp_struct * ramp){
+/*inline RampStage_t ramp_getStage(struct ramp_struct * ramp){
 	return ramp->stage;
-}
+}*/
 
-inline int32_t ramp_getOutput(struct ramp_struct * ramp)
+/*inline int32_t ramp_getOutput(struct ramp_struct * ramp)
 {
 	return ramp->output - ramp->levelCV + 1;
-}
+}*/
 
 
 void ramp_setup(struct ramp_struct * ramp, uint32_t attack){
 	ramp->attackIncreament=attack;
 }
 
-inline void ramp_setStage(struct ramp_struct * ramp, RampStage_t stage){
+void ramp_setStage(struct ramp_struct * ramp, RampStage_t stage){
 	ramp->stage = stage;
 	ramp->phase = 0;
 	updateStageVariables(ramp, stage);
 }
 
-inline void ramp_update(struct ramp_struct * ramp){
+void ramp_update(struct ramp_struct * ramp){
 
 	if(ramp->phase>>20)
 		handlePhaseOverflow(ramp);
@@ -94,6 +96,7 @@ inline void ramp_update(struct ramp_struct * ramp){
 	}
 
 	ramp->output = ((o * ramp->stageMul) >> 16) + ((ramp->stageAdd)>>8);
+    //test_variable=ramp->attackIncreament;
 
 	ramp->phase+=ramp->stageIncreament;
 }

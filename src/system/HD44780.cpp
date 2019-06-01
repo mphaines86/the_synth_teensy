@@ -7,7 +7,7 @@
  */
 #include "HD44780.h"         /* standard input and output library */
 #include "utilities.h"
-
+#include "util/delay.h"
 
 ///////////////////////////////////////////////////////////////////////////
 /*			LCD		DUE		SAM3X8E
@@ -35,28 +35,28 @@ void cmd2LCD(char cmd)
 
 	SendCmd = cmd;
 	SendCmd &=0xF0;           /* zero out the lower 4 bits */
-	SendCmd <<= 11;
+	SendCmd <<= 7;
 
-	REG_PIOC_SODR = (SendCmd);
-	PIOC->PIO_CODR = 1 << 14; // pull rs LOW
-	PIOC->PIO_SODR = 1 << 21;  /* pull E signal to high */
-	Delay_us(1);
+	GPIOD_PSOR = static_cast<uint32_t>(SendCmd);
+	GPIOB_PCOR = 1 << 5; // pull rs LOW
+	GPIOD_PSOR = 1 << 15;  /* pull E signal to high */
+	_delay_us(8);
 
-	PIOC->PIO_CODR = 1 << 21; /*pull e signal low*/
-	REG_PIOC_CODR =  (SendCmd);
+	GPIOD_PCOR = 1 << 15; /*pull e signal low*/
+	GPIOD_PCOR = static_cast<uint32_t>(SendCmd);
 
 	SendCmd = cmd & 0x0F;    /* extract the lower four bits */
-	SendCmd <<= 15;
-	REG_PIOC_SODR = (SendCmd);
-	PIOC->PIO_SODR = 1 << 21;  /* pull E signal to high */
+	SendCmd <<= 11;
+	GPIOD_PSOR = static_cast<uint32_t>(SendCmd);
+	GPIOD_PSOR = 1 << 15;  /* pull E signal to high */
 
-	Delay_us(1);
-	PIOC->PIO_CODR = 1 << 21; // pull e low
-	REG_PIOC_CODR =  (SendCmd);
-	PIOC->PIO_CODR = 1 << 14; // pull rs low
+	_delay_us(8);
+	GPIOD_PCOR = 1 << 15; // pull e low
+	GPIOD_PCOR = static_cast<uint32_t>(SendCmd);
+	GPIOB_PCOR = 1 << 5; // pull rs low
 
 	//LCD_E_RS_DAT &= (0 << LCD_E)| (1<< LCD_BL);  /* pull E clock to low */
-	Delay_us(25);       /* wait until the command is complete */
+	_delay_us(30);       /* wait until the command is complete */
 }
 
 
@@ -65,46 +65,43 @@ void openLCD(void)
 {
 	//LCD_DIR |=  (1 <<PORTD4) |(1 <<PORTD5) |(1 <<PORTD6) |(1 <<PORTD7);       /* configure LCD_DAT port for output */
 	//LCD_E_RS_DIR =  (1 << LCD_E) | (1 << LCD_RS) | (1 << LCD_BL);
-	Delay_ms(10);
+	_delay_ms(10);
 	cmd2LCD(0x28);        /* set 4-bit data, 2-line display, 5x7 font */
-	cmd2LCD(0x0C);        /* turn on display, cursor, blinking */
+	cmd2LCD(0x0F);        /* turn on display, cursor, blinking */
 	cmd2LCD(0x06);        /* move cursor right */
 	cmd2LCD(0x01);        /* clear screen, move cursor to home */
-	Delay_ms(2);        /* wait until "clear display" command is complete */
+	_delay_ms(20);        /* wait until "clear display" command is complete */
 }
 
 
 void putcLCD(char cx)
 {
 
-	char temp;
 	int SendCmd=0;
-	int i;
-	temp = cx;           /* save a copy of the char  */
 	SendCmd = cx;
 	SendCmd &=0xF0;           /* zero out the lower 4 bits */
-	SendCmd <<= 11;
+	SendCmd <<= 7;
 
-	REG_PIOC_SODR = (SendCmd);
-	PIOC->PIO_SODR = 1 << 14; // pull rs high
-	PIOC->PIO_SODR = 1 << 21;  /* pull E signal to high */
-	Delay_us(1);
+    GPIOD_PSOR = static_cast<uint32_t>(SendCmd);
+    GPIOB_PSOR = 1 << 5; // pull rs HIGH
+    GPIOD_PSOR = 1 << 15;  /* pull E signal to high */
+    _delay_us(8);
 
-	PIOC->PIO_CODR = 1 << 21; /*pull e signal low*/
-	REG_PIOC_CODR =  (SendCmd);
+    GPIOD_PCOR = 1 << 15; /*pull e signal low*/
+    GPIOD_PCOR = static_cast<uint32_t>(SendCmd);
 
-	SendCmd = cx & 0x0F;    /* extract the lower four bits */
-	SendCmd <<= 15;
-	REG_PIOC_SODR = (SendCmd);
-	PIOC->PIO_SODR = 1 << 21;  /* pull E signal to high */
+    SendCmd = cx & 0x0F;    /* extract the lower four bits */
+    SendCmd <<= 11;
+    GPIOD_PSOR = static_cast<uint32_t>(SendCmd);
+    GPIOD_PSOR = 1 << 15;  /* pull E signal to high */
 
-	Delay_us(1);
-	PIOC->PIO_CODR = 1 << 21; // pull e low
-	REG_PIOC_CODR =  (SendCmd);
-	PIOC->PIO_SODR = 1 << 14; // pull rs low
+    _delay_us(8);
+    GPIOD_PCOR = 1 << 15; // pull e low
+    GPIOD_PCOR = static_cast<uint32_t>(SendCmd);
+    GPIOB_PCOR = 1 << 5; // pull rs low
 
 	//LCD_E_RS_DAT &= (0 << LCD_E)| (1<< LCD_BL);  /* pull E clock to low */
-	Delay_us(25);       /* wait until the command is complete */
+	_delay_us(30);       /* wait until the command is complete */
 }
 
 void putsLCD(const char *ptr)  /* breaks the string down to characters ie a pointer to an address that holds the string */
@@ -119,7 +116,7 @@ void putsLCD(const char *ptr)  /* breaks the string down to characters ie a poin
 void clearscreen(void)
 {
 	cmd2LCD(0x01);  // clears screen  0x08 blanks the display without clearing
-	cposition(0,1);   // returns cursor home
+	cposition(0,0);   // returns cursor home
 }
 
 void clearline(int line)
@@ -135,16 +132,16 @@ void cposition(int x, int y)
 
 	switch(y)
 	{
-		case 1:
+		case 0:
 		temp += (0x80);      /// return home
 		break;
-		case 2:
+		case 1:
 		temp += (0xC0);      /// Line 2
 		break;
-		case 3:
+		case 2:
 		temp += (0x94);      /// line 3
 		break;
-		case 4:
+		case 3:
 		temp += (0xD4);      /// line 4
 		break;
 	}

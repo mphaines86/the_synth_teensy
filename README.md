@@ -6,7 +6,7 @@ This is a work in progress 8 voice synthesizer using referances from dzlonline t
 https://www.youtube.com/watch?v=YTVGzLrhA3o
 
 ## Technical Details
-The code is built for the Arduino due, thus it is built for the Atmel SAM3X line of Arm processors. Current specifications of the synth include:
+The code is built for the Teensy 3.6, thus it is built for the K66 family of processors. Current specifications of the synth include:
 
 * 8 voices with two oscillators per voice
 * 8-bit Sample playback

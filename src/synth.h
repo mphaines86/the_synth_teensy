@@ -9,18 +9,18 @@
 #ifndef SYNTH_H
 #define SYNTH_H
 
-#define SYNTH_VOICE_COUNT 6
+#define SYNTH_VOICE_COUNT 8
 #define FS 32000
 
 #include <Arduino.h>
 
 
 extern volatile uint16_t amplitude[SYNTH_VOICE_COUNT];           //-Wave amplitudes [0-255]
-extern volatile uint16_t cv_pitch[SYNTH_VOICE_COUNT];
+extern volatile uint16_t current_note[SYNTH_VOICE_COUNT];
 
 extern volatile unsigned char divider;//-Sample rate decimator for envelope
 extern volatile uint16_t time_hz;
-extern volatile uint32_t tik;
+extern volatile uint64_t tik;
 extern volatile unsigned char output_mode;
 
 extern volatile int16_t Pitch_bend[SYNTH_VOICE_COUNT];
@@ -45,12 +45,11 @@ extern volatile uint16_t filter_total;
 //  Audio driver interrupt
 //*********************************************************************************************
 
-void begin();
+void synth_begin();
 void interfaceCheck();
-void note_trigger(byte channel, byte pitch, byte velocity);
-void NoteRelease(byte channel, byte pitch, byte velocity);
-void ControlChange(byte number, byte value);
-void potChange(byte number, uint8_t parameter_type);
+void note_trigger(byte given_pitch, byte velocity);
+void NoteRelease(byte given_pitch);
+void parameterChange();
 
 
 

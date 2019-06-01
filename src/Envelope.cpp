@@ -6,7 +6,7 @@
  */
 #include "Envelope.h"
 
-inline void envelope_trigger(struct envelope_struct * env, uint32_t level){
+/*inline void envelope_trigger(struct envelope_struct * env, uint32_t level){
 	env->output = 0;
 	env->phase = 0;
 
@@ -15,9 +15,9 @@ inline void envelope_trigger(struct envelope_struct * env, uint32_t level){
 
 	updateStageVariables(env, ATTACK);
 	envelope_update(env);
-}
+}*/
 
-static inline void updateStageVariables(struct envelope_struct * envelope, EnvelopeStage_t stage){
+/*static inline void updateStageVariables(struct envelope_struct * envelope, EnvelopeStage_t stage){
 
 	switch(stage){
 
@@ -48,21 +48,23 @@ static inline void updateStageVariables(struct envelope_struct * envelope, Envel
 			envelope->stageMul=0;
 			envelope->stageIncreament=0;
 	}
-}
+}*/
 
 static void handlePhaseOverflow(struct envelope_struct * envelope){
 	envelope->phase = 0;
 	envelope->stageIncreament = 0;
 
-	++envelope->stage;
+	auto stage = static_cast<uint8_t>(envelope->stage) + 1;
 
-	switch(envelope->stage){
+	switch(stage){
 
 		case DECAY:
+		    envelope->stage = DECAY;
 			envelope->output=envelope->levelCV;
 			updateStageVariables(envelope, DECAY);
 			return;
 		case SUSTAIN:
+		    envelope->stage = SUSTAIN;
 			updateStageVariables(envelope, SUSTAIN);
 			return;
 		case DEAD:
@@ -76,30 +78,33 @@ static void handlePhaseOverflow(struct envelope_struct * envelope){
 	}
 }
 
-inline EnvelopeStage_t env_getStage(struct envelope_struct * envelope){
+/*inline EnvelopeStage_t env_getStage(struct envelope_struct * envelope){
 	return envelope->stage;
-}
+}*/
 
-inline uint16_t env_getOutput(struct envelope_struct * envelope)
+/*inline uint16_t env_getOutput(struct envelope_struct * envelope)
 {
 	return envelope->output;
-}
+}*/
 
 
-void envelope_setup(struct envelope_struct * envelope, uint32_t attack, uint32_t decay, uint16_t sustain, uint32_t release){
-	envelope->attackIncreament=attack;
-	envelope->decayIncreament=decay;
+void envelope_setup(struct envelope_struct *envelope, uint32_t attack, uint32_t decay, uint16_t sustain, uint32_t release,
+                    uint8_t amp, uint8_t speed) {
+	uint8_t shifter = speed * 6;
+    envelope->attackIncreament=attack >> shifter;
+	envelope->decayIncreament=decay >> shifter;
 	envelope->sustainCV=sustain;
-	envelope->releaseIncreament=release;
+	envelope->releaseIncreament=release >> shifter;
+	envelope->amplitude=amp;
 }
 
-inline void envelope_setStage(struct envelope_struct * envelope, EnvelopeStage_t stage){
+void envelope_setStage(struct envelope_struct * envelope, EnvelopeStage_t stage){
 	envelope->stage = stage;
 	envelope->phase = 0;
 	updateStageVariables(envelope, stage);
 }
 
-inline void envelope_update(struct envelope_struct * env){
+void envelope_update(struct envelope_struct * env){
 
 	if(env->phase>>20)
 		handlePhaseOverflow(env);
@@ -122,7 +127,6 @@ inline void envelope_update(struct envelope_struct * env){
 		;
 	}
 
-	env->output = ((o * env->stageMul) >> 16) + ((env->stageAdd)>>8);
-
+	env->output = ((((o * env->stageMul) >> 16) + ((env->stageAdd)>>8)) * env->amplitude) >> 8;
 	env->phase+=env->stageIncreament;
 }

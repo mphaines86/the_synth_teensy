@@ -1,5 +1,7 @@
 // LCD MODULES void cmd2LCD(char cmd)
 
+#define NSDELAY nsdelay = 1 / F_CPU * 1000000000;
+
 char Swap_Bits(char data)
 {
 	char result= 0;
@@ -14,19 +16,26 @@ char Swap_Bits(char data)
 	return finalresult;
 }
 
-void Delay(void){
-	float usdelay = 0.0;
-	usdelay =(1000/ ( (1.0 / 28000000) * 1000000000 ) );
+void DelayCycle(void){
 
-	while (usdelay != 0) {
+	int nsdelay = NSDELAY;
+
+	while (nsdelay != 0) {
 		asm("NOP");
-		usdelay--;
+		nsdelay--;
+	}
+}
+
+void Delay_ns(int delayns){
+	while (delayns != 0){
+		DelayCycle();
+		delayns--;
 	}
 }
 
 void Delay_us(int delayus){
 	while (delayus != 0){
-		Delay();
+		Delay_ns(1000);
 		delayus--;
 	}
 
