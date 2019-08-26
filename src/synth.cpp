@@ -184,12 +184,15 @@ void ftm1_isr(void){
 
 void interfaceCheck(){
 	midi_read();
-    //static char dv[10] = {0};
-    //test_variable++;
     //test_variable = synthesizer.oscillators[1].cv_pitch[1];
-    //sprintf(dv,"%8d",test_variable);
-    //cposition(0, 2);
-    //putsLCD(dv);
+    //if(!(tik%2056)) {
+        //test_variable++;
+        //Serial.println(test_variable);
+        //static char dv[10] = {0};
+        //sprintf(dv,"%8d",test_variable);
+        //cposition(0, 2);
+        //putsLCD(dv);
+    //}
 	interfaceUpdate();
 }
 
@@ -202,10 +205,10 @@ void set_envelopes(){
 
 	int i = 0;
 	for(i = 0; i < SYNTH_VOICE_COUNT; i++){
-		envelope_setup(&synthesizer.amplitudeEnvs[i], 65535, 65535, 65535, 500, 255, 0);
-		envelope_setup(&synthesizer.filterEnvs[i], 65535, 65535, 65535, 1, 255, 0);
+		envelope_setup(&synthesizer.amplitudeEnvs[i], 65535, 65535, 65535, 500, 0, 0, UINT16_MAX);
+		envelope_setup(&synthesizer.filterEnvs[i], 65535, 65535, 65535, 1, 0, 0, UINT16_MAX);
 		//envelope_setup(&synthesizer.resonantEnvs[i], 46,56,45333,19);
-		envelope_setup(&synthesizer.resonantEnvs[i], 65535, 75, 65535, 500, 255, 0);
+		envelope_setup(&synthesizer.resonantEnvs[i], 65535, 75, 65535, 500, 0, 0, UINT16_MAX);
 		ramp_setup(&synthesizer.pitchramp[i], 0);
 	}
 
@@ -269,8 +272,8 @@ void set_lfo(){
 	spParameterList[spLfoBTrk] = 0;
 	int i = 0;
 	for (i = 0; i< SYNTH_VOICE_COUNT; i++){
-		lfo_init(&synthesizer.pitchlfo[i], lfoSine, 5000, 254);
-		lfo_init(&synthesizer.filterlfo[i], lfoSine, 5000, 254);
+        lfo_init(&synthesizer.pitchlfo[i], lfoSine, 5000, 254, 0);
+        lfo_init(&synthesizer.filterlfo[i], lfoSine, 5000, 254, 0);
 		synthesizer.pitchlfo[i].key_follow = spParameterList[spLfoATrk];
 		synthesizer.filterlfo[i].key_follow = spParameterList[spLfoBTrk];
 
@@ -314,6 +317,7 @@ void synth_begin()
 
 void note_trigger(byte given_pitch, byte velocity) {
 
+	int8_t reset_flag = 0;
 	int8_t voice=-1;
 	uint8_t i = 0;
 	uint32_t oldest_time_stamp=UINT32_MAX;
@@ -327,6 +331,10 @@ void note_trigger(byte given_pitch, byte velocity) {
 			if(time_stamps[i]<oldest_time_stamp){
 					oldest_time_stamp=time_stamps[i];
 					voice = i;
+			}
+			if(current_note[i] == given_pitch){
+				voice = i;
+				//reset_flag = 1;
 			}
 		}
 	}
@@ -350,10 +358,11 @@ void note_trigger(byte given_pitch, byte velocity) {
 	//lfo_trigger(&synthesizer.pitchlfo[voice]);
 	lfo_trigger(&synthesizer.filterlfo[voice]);
 	ramp_trigger(&synthesizer.pitchramp[voice], cpParameterList[rampAmount]);
-	envelope_trigger(&synthesizer.amplitudeEnvs[voice], 65535);
+
+    envelope_trigger(&synthesizer.amplitudeEnvs[voice], 65535);
+    envelope_trigger(&synthesizer.resonantEnvs[0], velocity * 516);
+    envelope_trigger(&synthesizer.filterEnvs[0], cpParameterList[fltrEnvMnt]);
 	//if(current_stage <=1){
-	envelope_trigger(&synthesizer.filterEnvs[0], cpParameterList[fltrEnvMnt]);
-	envelope_trigger(&synthesizer.resonantEnvs[0], velocity * 516);
 	//}
 	noteTrigger[voice] = 1;
 }
@@ -362,16 +371,19 @@ void note_trigger(byte given_pitch, byte velocity) {
 void NoteRelease(byte given_pitch) {
 	int i = 0;
 	for(i = 0; i < SYNTH_VOICE_COUNT; i++){
-			if(notes[i] == given_pitch){
-			    //amplitude[i] = 0; //temp
-			    noteDeath[i] = 1;
-			    free_notes[i] = i;
-			    time_stamps[i] = tik;
+        if(notes[i] == given_pitch){
+            //amplitude[i] = 0; //temp
+            noteDeath[i] = 1;
+            free_notes[i] = i;
+            time_stamps[i] = tik;
+			envelope_setGate(&synthesizer.amplitudeEnvs[i], 0);
+			envelope_setGate(&synthesizer.filterEnvs[i], 0);
+			envelope_setGate(&synthesizer.resonantEnvs[i], 0);
+            //envelope_setStage(&synthesizer.amplitudeEnvs[i],RELEASE);
+            //envelope_setStage(&synthesizer.filterEnvs[i],RELEASE);
+            //envelope_setStage(&synthesizer.resonantEnvs[i],RELEASE);
 
-			    envelope_setStage(&synthesizer.amplitudeEnvs[i],RELEASE);
-                envelope_setStage(&synthesizer.filterEnvs[i],RELEASE);
-                envelope_setStage(&synthesizer.resonantEnvs[i],RELEASE);
-		}
+        }
 
 	}
 
@@ -387,11 +399,14 @@ void refreshEnvelopes(){
 
     for(uint8_t i=0; i<SYNTH_VOICE_COUNT;++i){
 		envelope_setup(&synthesizer.amplitudeEnvs[i], cpParameterList[AmpAtt], cpParameterList[AmpDec],
-					   cpParameterList[AmpSus], cpParameterList[AmpRel], (uint8_t) (cpParameterList[AmpAmp] >> 8), spParameterList[spAmpEnvSpd]);
+					   cpParameterList[AmpSus], cpParameterList[AmpRel], spParameterList[spAmpEnvSpd],
+					   spParameterList[spAmpEnvTrig], cpParameterList[AmpAmp]);
 		envelope_setup(&synthesizer.filterEnvs[i], cpParameterList[fltrAtt], cpParameterList[fltrDec],
-					   cpParameterList[fltrSus], cpParameterList[fltrRel], (uint8_t) (cpParameterList[fltrAmp] >> 8), spParameterList[spFltrEnvSpd]);
+					   cpParameterList[fltrSus], cpParameterList[fltrRel], spParameterList[spFltrEnvSpd],
+					   spParameterList[spFltrEnvTrig], cpParameterList[fltrAmp]);
 		envelope_setup(&synthesizer.resonantEnvs[i], cpParameterList[AuxAtt], cpParameterList[AuxDec],
-					   cpParameterList[AuxSus], cpParameterList[AuxRel], (uint8_t) (cpParameterList[AuxAmp] >> 8), spParameterList[spAuxEnvSpd]);
+					   cpParameterList[AuxSus], cpParameterList[AuxRel], spParameterList[spAuxEnvSpd],
+					   spParameterList[spAuxEnvTrig], cpParameterList[AuxAmp]);
 		ramp_setup(&synthesizer.pitchramp[i], cpParameterList[rampRate]);
     }
 }
@@ -408,10 +423,12 @@ void refreshOscillators(){
 void refreshLfos(){
 	for (uint8_t i = 0; i < SYNTH_VOICE_COUNT; ++i) {
 
-		lfo_init(&synthesizer.pitchlfo[i], static_cast<lfoShape_t>(spParameterList[spLfoAShape]), cpParameterList[lfoAPitch], cpParameterList[lfoARate]);
-		lfo_init(&synthesizer.filterlfo[i], static_cast<lfoShape_t>(spParameterList[spLfoBShape]), cpParameterList[lfoBPitch], cpParameterList[lfoBRate]);
 		synthesizer.pitchlfo[i].key_follow = spParameterList[spLfoATrk];
 		synthesizer.filterlfo[i].key_follow = spParameterList[spLfoBTrk];
+        lfo_init(&synthesizer.pitchlfo[i], static_cast<lfoShape_t>(spParameterList[spLfoAShape]),
+                 cpParameterList[lfoAPitch], cpParameterList[lfoARate], spParameterList[spLfoAspeed]);
+        lfo_init(&synthesizer.filterlfo[i], static_cast<lfoShape_t>(spParameterList[spLfoBShape]),
+                 cpParameterList[lfoBPitch], cpParameterList[lfoBRate], spParameterList[spLfoBspeed]);
 	}
 }
 

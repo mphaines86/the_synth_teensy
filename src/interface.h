@@ -36,5 +36,6 @@ extern uint16_t spParameterList[spCount];
 extern uint8_t spParameterBits[spCount];
 void interfaceInit();
 void interfaceUpdate();
+void interfaceUpdatePage();
 
 #endif

@@ -9,12 +9,15 @@
 #define POT_TIME 250
 #define POT_THRESHOLD 1000
 #define NUM_OF_POTS 8
+#define NUM_OF_BUTTONS 8
+#define BUTTON_TIME 250
 #define NUM_OF_SAMPLES 20
 
 uint16_t cpParameterList[cpCount];
 uint16_t spParameterList[spCount];
 uint8_t analogBusy = 0;
 uint8_t updatePage = 0;
+uint8_t page_update = 0;
 
 uint8_t spParameterBits[spCount] = {
         4, // wave A
@@ -45,17 +48,23 @@ static struct {
     uint16_t current_sample[NUM_OF_POTS];
     uint8_t potAdress[NUM_OF_POTS];
 
-    int8_t integrator[2];
+    int8_t integrator[NUM_OF_BUTTONS];
+    uint8_t increament_button;
+    uint8_t param_page;
     uint8_t page;
-    uint32_t lastPressTime[2];
-    uint8_t lastButtonPress[2];
+    uint32_t lastPressTime[NUM_OF_BUTTONS];
+    uint64_t lastButtonPress[NUM_OF_BUTTONS];
 
     uint8_t temp_parameter;
 
 } interface;
 
 enum interfaceParamType_e {
-  parameterNone=0, parameterCont, parameterStep
+  parameterNone=0, parameterCont, parameterStep, parameterCust
+};
+
+enum interfacePage_e {
+    iLeft, iRight, iParam, iSample, iLayout, iMatrix, iSettings, iPatch
 };
 
 struct interfaceParam_s{
@@ -108,7 +117,7 @@ const struct interfaceParam_s interfaceParameters[PARAMETER_PAGES][8] = {
         {.type=parameterNone},
     },
     {
-        {.type=parameterCont, .number=AmpAtt, .shortName="ACut", .longName="Ampitude Attack"},
+        {.type=parameterCont, .number=AmpAtt, .shortName="AAtk", .longName="Ampitude Attack"},
         {.type=parameterCont, .number=AmpDec, .shortName="ADec", .longName="Amplitude Decay"},
         {.type=parameterCont, .number=AmpSus, .shortName="ASus", .longName="Amplitude Sustain"},
         {.type=parameterCont, .number=AmpRel, .shortName="ARel", .longName="Amplitude Release"},
@@ -163,7 +172,7 @@ static int uint16Compare(const void * a,const void * b)
 static uint8_t debounce(uint8_t port, uint8_t button){
 
   uint8_t output = 0;
-
+  //test_variable = (GPIOC_PDIR&(1<<port));
 
   if (!(GPIOC_PDIR&(1<<port))){
     if (interface.integrator[button] > 0)
@@ -182,35 +191,72 @@ static uint8_t debounce(uint8_t port, uint8_t button){
   return output;
 }
 
-static void handleUserInput(uint8_t input){
+static void handleUserInput(int8_t input){
 
-    const struct interfaceParam_s * parameter;
-    parameter = &interfaceParameters[interface.page][input];
-    uint8_t current_type;
-    static char dv[4]={0};
-    switch(parameter->type){
-        case parameterNone:
-            return;
-        case parameterCont:
-            cpParameterList[parameter->number]= interface.pot_value[input];
-            current_type = 0;
-            sprintf(dv,"%3d",cpParameterList[parameter->number]>>8);
-            break;
-        case parameterStep:
-            uint8_t v = interface.pot_value[input]>>(16-spParameterBits[parameter->number]);
-            spParameterList[parameter->number]= v;
-            sprintf(dv,"%3d",spParameterList[parameter->number]);
-            break;
-    }
-    if(input < NUM_OF_POTS/2) {
-        cposition(input * 5 + 1, 1);
-    }
-    else {
-        cposition((input - 4) * 5 + 1, 3);
-    }
-    putsLCD(dv);
-    parameterChange();
+    Serial.println(input);
+    return;
+    if (input>=iLeft){
+        switch (input){
+            case iLeft:
+                interfaceUpdatePage();
+                break;
 
+            case iRight:
+                interfaceUpdatePage();
+                break;
+
+            case iParam:
+                interface.param_page = 0;
+                interfaceUpdatePage();
+                break;
+
+            case iSample:
+                break;
+            case iLayout:
+            case iMatrix:
+            case iSettings:
+            case iPatch:
+                cmd2LCD(0x01);
+                delay(2);
+                cposition(0,0);
+                const char *message = "Patch saving not    implemented :P";
+                putsLCD(message);
+                break;
+        }
+
+    }
+
+    if(input<iLeft){
+        switch (interface.page) {
+            case iParam:
+                const struct interfaceParam_s *parameter;
+                parameter = &interfaceParameters[interface.param_page][-input - 1];
+                uint8_t current_type;
+                static char dv[4] = {0};
+                switch (parameter->type) {
+                    case parameterNone:
+                        return;
+                    case parameterCont:
+                        cpParameterList[parameter->number] = interface.pot_value[-input - 1];
+                        current_type = 0;
+                        sprintf(dv, "%3d", cpParameterList[parameter->number] >> 8);
+                        break;
+                    case parameterStep:
+                        uint8_t v = interface.pot_value[input] >> (16 - spParameterBits[parameter->number]);
+                        spParameterList[parameter->number] = v;
+                        sprintf(dv, "%3d", spParameterList[parameter->number]);
+                        break;
+                }
+                if (input < NUM_OF_POTS / 2) {
+                    cposition(input * 5 + 1, 1);
+                } else {
+                    cposition((input - 4) * 5 + 1, 3);
+                }
+                putsLCD(dv);
+                parameterChange();
+                break;
+        }
+    }
   }
 
 void interfaceUpdatePage(){
@@ -219,9 +265,9 @@ void interfaceUpdatePage(){
     const char * space = " ";
     cposition(0,0);
     for (int i = 0; i < PARAMETER_PAGES/2; ++i) {
-        //sprintf(dv, "%-4s", interfaceParameters[interface.page][i].shortName);
-        if (interfaceParameters[interface.page][i].type!=parameterNone) {
-            putsLCD(interfaceParameters[interface.page][i].shortName);
+        //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
+        if (interfaceParameters[interface.param_page][i].type!=parameterNone) {
+            putsLCD(interfaceParameters[interface.param_page][i].shortName);
             putsLCD(space);
         }
     }
@@ -229,13 +275,13 @@ void interfaceUpdatePage(){
     cposition(0, 1);
     for (int i = 0; i < PARAMETER_PAGES/2; ++i) {
         static char dv[4]={0};
-        //sprintf(dv, "%-4s", interfaceParameters[interface.page][i].shortName);
-        if (interfaceParameters[interface.page][i].type==parameterCont) {
-            sprintf(dv, "%4d", cpParameterList[interfaceParameters[interface.page][i].number] >> 8);
+        //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
+        if (interfaceParameters[interface.param_page][i].type==parameterCont) {
+            sprintf(dv, "%4d", cpParameterList[interfaceParameters[interface.param_page][i].number] >> 8);
             putsLCD(dv);
             putsLCD(space);
-        } else if (interfaceParameters[interface.page][i].type == parameterStep){
-            sprintf(dv, "%4d", spParameterList[interfaceParameters[interface.page][i].number]);
+        } else if (interfaceParameters[interface.param_page][i].type == parameterStep){
+            sprintf(dv, "%4d", spParameterList[interfaceParameters[interface.param_page][i].number]);
             putsLCD(dv);
             putsLCD(space);
         }
@@ -243,8 +289,8 @@ void interfaceUpdatePage(){
 
     cposition(0,2);
     for (int i = PARAMETER_PAGES/2; i < PARAMETER_PAGES; ++i) {
-        if (interfaceParameters[interface.page][i].type!=parameterNone) {
-            putsLCD(interfaceParameters[interface.page][i].shortName);
+        if (interfaceParameters[interface.param_page][i].type!=parameterNone) {
+            putsLCD(interfaceParameters[interface.param_page][i].shortName);
             putsLCD(" ");
         }
     }
@@ -252,33 +298,78 @@ void interfaceUpdatePage(){
     cposition(0,3);
     for (int i = PARAMETER_PAGES/2; i < PARAMETER_PAGES; ++i) {
         static char dv[4]={0};
-        //sprintf(dv, "%-4s", interfaceParameters[interface.page][i].shortName);
-        if (interfaceParameters[interface.page][i].type==parameterCont) {
-            sprintf(dv, "%4d", cpParameterList[interfaceParameters[interface.page][i].number] >> 8);
+        //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
+        if (interfaceParameters[interface.param_page][i].type==parameterCont) {
+            sprintf(dv, "%4d", cpParameterList[interfaceParameters[interface.param_page][i].number] >> 8);
             putsLCD(dv);
             putsLCD(space);
-        } else if (interfaceParameters[interface.page][i].type == parameterStep){
-            sprintf(dv, "%4d", spParameterList[interfaceParameters[interface.page][i].number]);
+        } else if (interfaceParameters[interface.param_page][i].type == parameterStep){
+            sprintf(dv, "%4d", spParameterList[interfaceParameters[interface.param_page][i].number]);
             putsLCD(dv);
             putsLCD(space);
         }
     }
 }
 
+static void readButton(){
+
+    uint8_t output = debounce(10, interface.increament_button);
+
+    //test_variable = interface.increament_button;
+    if(output == 1){
+        test_variable = tik - interface.lastButtonPress[interface.increament_button];
+        if (tik - interface.lastButtonPress[interface.increament_button] >= BUTTON_TIME){
+            Serial.print(interface.increament_button);
+            Serial.print(":");
+            Serial.println(output);
+            page_update = 1;
+            GPIOA_PSOR = (1 << 17);
+
+            if (interface.increament_button < 2) {
+                if (!interface.increament_button) {
+                    interface.param_page--;
+                } else {
+                    interface.param_page++;
+                }
+                interface.param_page %= PARAMETER_PAGES;
+                //handleUserInput(interface.increament_button);
+
+            } else if (interface.increament_button > 1) {
+                Serial.println("Here");
+                if (interface.page == interface.increament_button) {
+                    interface.page = iPatch;
+                } else {
+                    interface.page = interface.increament_button;
+                }
+                //handleUserInput(interface.page);
+            }
+            updatePage = 1;
+        }
+        interface.lastButtonPress[interface.increament_button] = tik;
+    }
+
+    interface.increament_button = (interface.increament_button+1)%NUM_OF_BUTTONS;
+}
+
+
+
 
 static void readPotentiometers(){
     uint32_t new_value;
   	uint16_t tmp[NUM_OF_SAMPLES];
-    uint8_t tmpAdress[] = {11, 10, 0, 1, 2, 3, 4, 5, 6, 7,};
+    page_update = 0;
 
     if (!analogBusy){
         GPIOD_PSOR = (interface.increament_potentiometer << 11);
         GPIOA_PCOR = (1 << 17);
         analogBusy = 1;
         ADC0_SC1A = 23;
+        // Read buttons because button mux is synced to pot mux
+        readButton();
+
     }
 
-    if (ADC0_SC1A & ADC_SC1_COCO){
+    if ((ADC0_SC1A & ADC_SC1_COCO) && !page_update){
         interface.pot_samples[interface.increament_potentiometer]
         [interface.current_sample[interface.increament_potentiometer]]= ADC0_RA;
         GPIOA_PSOR = (1 << 17);
@@ -294,11 +385,11 @@ static void readPotentiometers(){
         if (abs(new_value-interface.pot_value[interface.increament_potentiometer]) >= POT_THRESHOLD){
             if(tik - interface.pot_time[interface.increament_potentiometer] >= POT_TIME) {
                 interface.pot_value[interface.increament_potentiometer] = new_value;
-                handleUserInput(interface.increament_potentiometer);
+                handleUserInput(-interface.increament_potentiometer-1);
             }
             else if (abs(new_value-interface.pot_value[interface.increament_potentiometer]) >= 2*POT_THRESHOLD){
                 interface.pot_value[interface.increament_potentiometer] = new_value;
-                handleUserInput(interface.increament_potentiometer);
+                handleUserInput(-interface.increament_potentiometer-1);
             }
             interface.pot_time[interface.increament_potentiometer] = tik;
         }
@@ -314,41 +405,8 @@ static void readPotentiometers(){
 
 }
 
-static void readButton(){
-
-    //uint16_t reading = REG_PIOC_PDSR>>22;
-
-    uint8_t output = debounce(10, 0);
-    //test_variable++;
-    if(!interface.lastButtonPress[0] && output){
-        interface.page++;
-        interface.page%=PARAMETER_PAGES;
-        //test_variable = interface.page;
-        interface.lastButtonPress[0] = output;
-        updatePage = 1;
-        return; //decuase you shouldn't be pressing more then one button.
-      }
-    interface.lastButtonPress[0] = output;
-
-    output = debounce(11, 1);
-
-    if (!interface.lastButtonPress[1] && output){
-        interface.page--;
-        interface.page%=PARAMETER_PAGES;
-        //test_variable = interface.page;
-        interface.lastButtonPress[1] = output;
-        updatePage = 1;
-        return;
-      }
-
-      interface.lastButtonPress[1] = output;
-      //test_variable = interface.page;
-}
-
-
 
 void interfaceInit() {
-    uint8_t tmp[] = {11, 10, 0, 1, 2, 3, 4, 5, 6, 7,};
     //memcpy(&interface.potAdress[0], &tmp[0], sizeof(uint8_t));
     GPIOA_PSOR = (1 << 17);
 
@@ -361,6 +419,10 @@ void interfaceInit() {
     }
 
     for(unsigned short &value: interface.current_sample){
+        value=0;
+    }
+
+    for(unsigned long long &value: interface.lastButtonPress){
         value=0;
     }
 
@@ -377,18 +439,19 @@ void interfaceInit() {
     analogReadRes(16);
 
     interface.temp_parameter = 255;
-    interface.page = 0;
-    interfaceUpdatePage();
+    interface.param_page = 0;
+    interface.page=iPatch;
+    handleUserInput(interface.page);
+    //interfaceUpdatePage();
     interfaceUpdate();
 
 }
 
 void interfaceUpdate(){
     if (updatePage & !analogBusy){
-        interfaceUpdatePage();
+        //interfaceUpdatePage();
         updatePage = 0;
     }
     readPotentiometers();
-    readButton();
 
 }

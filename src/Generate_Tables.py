@@ -115,24 +115,23 @@ with open('tables_due.cpp', 'w') as filehandle:
     filehandle.write('\nconst uint8_t gtrac_wave[] = {' + ', '.join(repr(x) for x in given_wave) + '};\n')
 
     # The  creation of the sctruct for samples.
-    filehandle.write("""struct Voice waveStruct[MAX_WAVE_COUNT] = {
-                      {18366976, 7298560, 3, Arr1_wave}, //0\n
-                      {78101504, 14003200, -12, DarkHaven_wave}, //1\n
-                      {13107200, 9382912, 3, Swannee_wave}, //2\n
-                      {6404608, 0, 3, bassgt_wave}, //3\n
-                      {5767168, 148992, -3, guitar1_wave}, //4\n
-                      {8388608, 0, 3, bikodrum_wave}, //5\n
-                      {262144, 262144, 5, saw_wave}, //6\n
-                      {262144, 262144, 5, square_wave_50}, //7\n
-                      {262144, 262144, 5, square_wave_25}, //8\n
-                      {262144, 262144, 5, triangle_wave}, //9\n
-                      {262144, 262144, 5, EuroBell1_wave}, //10\n
-                      {262144, 262144, 5, EuroBell2_wave}, //11\n
-                      {7995392, 262144, -3, gtaraa_wave},\n
-                      {8388608, 0, -3, gtrac_wave},\n
-                      {13703168, 6851584, 3, cello3_wave},\n
-                      {18320384, 8192000, 3, strchoir_wave},\n
-                      };\n""")
+    filehandle.write("struct Voice waveStruct[MAX_WAVE_COUNT] = {\n\
+                      {18366976, 7298560, 3, Arr1_wave}, //0\n\
+                      {78101504, 14003200, -12, DarkHaven_wave}, //1\n\
+                      {13107200, 9382912, 3, Swannee_wave}, //2\n\
+                      {6404608, 0, 3, bassgt_wave}, //3\n\
+                      {5767168, 148992, -3, guitar1_wave}, //4\n\
+                      {8388608, 0, 3, bikodrum_wave}, //5\n\
+                      {262144, 262144, 5, saw_wave}, //6\n\
+                      {262144, 262144, 5, square_wave_50}, //7\n\
+                      {262144, 262144, 5, square_wave_25}, //8\n\
+                      {262144, 262144, 5, triangle_wave}, //9\n\
+                      {262144, 262144, 5, EuroBell1_wave}, //10\n\
+                      {262144, 262144, 5, EuroBell2_wave}, //11\n\
+                      {7995392, 262144, -3, gtaraa_wave},\n\
+                      {8388608, 0, -3, gtrac_wave},\n\
+                      {13703168, 6851584, 3, cello3_wave},\n\
+                      {18320384, 8192000, 3, strchoir_wave},\n\
+                      };\n")
 
-    filehandle.write('#endif')
     filehandle.close()

@@ -8,7 +8,7 @@ byte pitch_bend_channel[] = {0, 0, 0, 0, 0, 0, 0, 0,};
 
 int main(void) {
 
-    //Serial.begin(9600);
+    Serial.begin(9600);
 
     pinMode(15, OUTPUT);
     pinMode(22, OUTPUT);

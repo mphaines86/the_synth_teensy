@@ -7,14 +7,19 @@
 #include "lfo.h"
 #include "lfo_tables.h"
 
-void lfo_init(struct lfo_struct * lfo, lfoShape_t shape, uint16_t level, uint16_t rate){
+void lfo_init(struct lfo_struct *lfo, lfoShape_t shape, uint16_t level, uint16_t rate, uint8_t speed) {
     lfo_setWave(lfo, shape);
-    lfo_setRate(lfo, rate);
+    lfo_setRate(lfo, rate >> (speed * 6));
     lfo->level = level;
 }
 
 void lfo_setRate(struct lfo_struct * lfo, uint16_t value){
     lfo->rate= value;
+}
+
+void lfo_setRate(struct lfo_struct * lfo, uint8_t key, int8_t offset){
+    uint16_t pitch = (key - offset) * 240;
+    lfo->rate = lfo_CVtoFrequancy(pitch);
 }
 
 static uint16_t lfo_CVtoFrequancy(uint16_t cv){
@@ -24,11 +29,6 @@ static uint16_t lfo_CVtoFrequancy(uint16_t cv){
     return (pre_pitching>>(10 - octave));
 }
 
-void lfo_setRate(struct lfo_struct * lfo, uint8_t key, int8_t offset){
-    uint16_t pitch = (key - offset) * 240;
-    lfo->rate = lfo_CVtoFrequancy(pitch);
-
-}
 
 void lfo_setLevel(struct lfo_struct * lfo, uint16_t level){
     lfo->level = level;

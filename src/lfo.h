@@ -32,7 +32,7 @@ struct lfo_struct{
 };
 
 static uint16_t lfo_CVtoFrequancy(uint16_t cv);
-void lfo_init(struct lfo_struct * lfo, lfoShape_t shape, uint16_t level, uint16_t rate);
+void lfo_init(struct lfo_struct *lfo, lfoShape_t shape, uint16_t level, uint16_t rate, uint8_t speed);
 void lfo_trigger(struct lfo_struct * lfo);
 void lfo_trigger(struct lfo_struct * lfo, uint8_t key, int8_t offset);
 void lfo_setRate(struct lfo_struct * lfo, uint16_t value);
