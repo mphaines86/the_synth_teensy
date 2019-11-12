@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+#define NUM_OF_POTS 8
+
+typedef  enum {
+    parameterNone=0, parameterCont, parameterStep, parameterCust
+} interfaceParamType_e;
 
 typedef enum {
   oscAfreq=0, oscACrse=1, oscAVol=2, oscAMod=3,
@@ -17,7 +22,7 @@ typedef enum {
 
   cpCount
 
-} continousParameters_t;
+} ptContinuousParameters_t;
 
 typedef enum {
   spOscAWave=0, spOscBWave=1, spOscSync=2,
@@ -29,11 +34,22 @@ typedef enum {
 
   spCount
 
-} steppedParameter_t;
+} ptSteppedParameter_t;
+
+typedef enum {
+    waveLength=0, waveLoop=1, wavePitchC5=2,
+
+    cpWaveCount
+} spContinuousParameters_t;
+
+typedef enum {
+    waveName=0
+} spSteppedParameters;
 
 extern uint16_t cpParameterList[cpCount];
 extern uint16_t spParameterList[spCount];
 extern uint8_t spParameterBits[spCount];
+extern uint32_t cpSampleList[cpWaveCount];
 void interfaceInit();
 void interfaceUpdate();
 void interfaceUpdatePage();

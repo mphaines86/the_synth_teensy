@@ -3,7 +3,7 @@
 //
 #include "modMatrix.h"
 #include "synth.h"
-#include "interface.h"
+#include "Interface/interface.h"
 
 struct modMatrixSource_s {
     uint8_t number;

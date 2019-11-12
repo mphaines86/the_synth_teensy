@@ -43,8 +43,9 @@ void osc_setParameters(struct oscillator_struct *osc, oscSyncMode_t sync, uint16
 void osc_setWaves(struct oscillator_struct * osc, struct Voice * set_voice,
 	byte lowest_note, byte highest_note, byte oscillator){
 	uint8_t current_note;
+
 	for(current_note = lowest_note; current_note<=highest_note;current_note++){
-		osc->all_wavs[oscillator][current_note] = set_voice;
+	    osc->all_wavs[oscillator][current_note] = set_voice;
 	}
 }
 
@@ -83,27 +84,26 @@ void osc_update(struct oscillator_struct *osc){
 
 		//osc->phase_accumulator[i]%=262144;
         //Check to see if we reached the end of the wave
-        if (osc->phase_accumulator[i] >= osc->all_wavs[i][osc->note]->max_length) {
-            if (osc->all_wavs[i][osc->note]->loop_point){
-                //osc->phase_accumulator[i]%=262144;
-                osc->phase_accumulator[i] -= osc->all_wavs[i][osc->note]->loop_point;
-                if (i==0 && osc->sync == osmHard){
-                    //test_variable++;
-                    osc->phase_accumulator[1]=0;
-                }
-                //else if (i==0 && osc->sync == osmSoft){
-                //    osc->direction[1] *= -1;
-                //
-                // }
+        if (osc->phase_accumulator[i] >= osc->all_wavs[i][osc->note]->end_length) {
 
+            uint32_t test = osc->all_wavs[i][osc->note]->end_length - osc->all_wavs[i][osc->note]->loop_point;
+            if (i==0 && osc->sync == osmHard){
+                //test_variable++;
+                osc->phase_accumulator[1]=0;
             }
-            else{
-                osc->phase_accumulator[i] = osc->all_wavs[i][osc->note]->max_length;
+            osc->phase_accumulator[i] -= test;
+            if (!test){
+                osc->phase_accumulator[i] = osc->all_wavs[i][osc->note]->end_length;
+            }
 
-            }
+            //else if (i==0 && osc->sync == osmSoft){
+            //    osc->direction[1] *= -1;
+            //
+            // }
+
         }
         //else if (osc->direction[i] == -1 && (osc->phase_accumulator[i] <= 0 || osc->phase_accumulator[i] <= osc->all_wavs[i][osc->note]->loop_point))
-        //    osc->phase_accumulator[i] = osc->all_wavs[i][osc->note]->max_length - osc->frequancy_tuning_word[i]; //osc->all_wavs[i][osc->note]->max_length;
+        //    osc->phase_accumulator[i] = osc->all_wavs[i][osc->note]->end_length - osc->frequancy_tuning_word[i]; //osc->all_wavs[i][osc->note]->end_length;
         osc->output[i] = (((127 - *(osc->all_wavs[i][osc->note]->wave +
             ((osc->phase_accumulator[i]) >> 9))) * // * osc->oscillator_mix[i]) >> 8) *
             osc->amplitude) >> 8);

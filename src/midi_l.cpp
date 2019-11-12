@@ -1,6 +1,6 @@
 #include "midi_l.h"
 #include "synth.h"
-#include "interface.h"
+#include "Interface/interface.h"
 
 #define NRPNCONTROLLSB 98
 #define NRPNCONTROLMSB 99
@@ -31,7 +31,7 @@ uint16_t midiCombineBytes(uint8_t first, uint8_t second)
 void handleNoteOn(byte channel, byte pitch, byte velocity)
 {
     note_trigger(pitch, velocity);
-    Serial.println(test_variable);
+    //Serial.println(test_variable);
     //Serial.println(pitch);
 }
 
@@ -40,7 +40,7 @@ void handleNoteOff(byte channel, byte pitch, byte velocity)
     // Do something when the note is released.
     // Note that NoteOn messages with 0 velocity are interpreted as NoteOffs.
     NoteRelease(pitch);
-    Serial.println(test_variable);
+    //Serial.println(test_variable);
 }
 
 void handlePitchBend(byte channel, int bend){
