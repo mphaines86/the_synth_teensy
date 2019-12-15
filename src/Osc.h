@@ -64,4 +64,8 @@ inline int16_t osc_getOutput(struct oscillator_struct * osc){
 	return osc->output_sum;
 }
 
+inline int16_t osc_getOutput(struct oscillator_struct * osc, uint8_t number){
+	return osc->output[number];
+}
+
 #endif

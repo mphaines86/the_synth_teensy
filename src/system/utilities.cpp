@@ -1,5 +1,7 @@
 // LCD MODULES void cmd2LCD(char cmd)
 
+#include <cstdint>
+
 #define NSDELAY nsdelay = 1 / F_CPU * 1000000000;
 
 char Swap_Bits(char data)
@@ -16,9 +18,9 @@ char Swap_Bits(char data)
 	return finalresult;
 }
 
-void DelayCycle(void){
+void DelayCycle(){
 
-	int nsdelay = NSDELAY;
+	uint8_t nsdelay =  1000000000 / F_CPU;
 
 	while (nsdelay != 0) {
 		asm("NOP");

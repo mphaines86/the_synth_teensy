@@ -108,7 +108,7 @@ void osc_update(struct oscillator_struct *osc){
             ((osc->phase_accumulator[i]) >> 9))) * // * osc->oscillator_mix[i]) >> 8) *
             osc->amplitude) >> 8);
 
-        output += ((osc->output[i] * osc->oscillator_mix[i]) >> 8);
+        //output += ((osc->output[i] * osc->oscillator_mix[i]) >> 8);
 
     }
     //osc->output_sum = output;

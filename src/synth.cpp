@@ -50,21 +50,12 @@ volatile uint32_t timer = 0;
 //These are temporary variables and bound to change.
 //******************************************************************************
 
-uint16_t amp_out;
-uint8_t  multiplexer = 0;
 uint8_t aftertouch = 0;
-int8_t global_detune = 0;
-uint8_t cv7 = 0;
-uint8_t cv70 = 0;
-uint8_t cv2 = 0;
-uint8_t cv12 = 0;
-uint8_t cv = 0;
-uint8_t ramp1 = 0;
 volatile uint16_t filter_total = 0;
-uint32_t time_stamps[] = {0, 0, 0, 0, 0, 0, 0, 0};
+uint32_t time_stamps[SYNTH_VOICE_COUNT] = {0};
 
- byte notes[SYNTH_VOICE_COUNT];
- int free_notes[] = {0, 1, 2, 3, 4, 5, 6, 7};
+byte notes[SYNTH_VOICE_COUNT];
+int free_notes[SYNTH_VOICE_COUNT] = {0};
 
 
 //******************************************************************************
@@ -80,31 +71,69 @@ void ftm1_isr(void){
     if(!(divider%=SYNTH_VOICE_COUNT))
 		tik++;
 
+	//-------------------------------
+	//  Synthesizer/audio mixer
+	//-------------------------------
+
+	int16_t output_sum = 0;
+	if(spParameterList[spOscRing]) {
+        for (auto &oscillator : synthesizer.oscillators) {
+            osc_update(&oscillator);
+            //output_sum += osc_getOutput(&oscillator);
+            output_sum += (osc_getOutput(&oscillator, 0) * oscillator.oscillator_mix[0]) >> 8;
+            output_sum += (((osc_getOutput(&oscillator, 0) * osc_getOutput(&oscillator, 1)) >> 8) *
+                           oscillator.oscillator_mix[1]) >> 6;
+            //output_sum += lfo_getOutput(&synthesizer.pitchlfo[i]);
+            //Delay_ns(4);
+        }
+    }
+	else{
+        for (auto &oscillator : synthesizer.oscillators) {
+            osc_update(&oscillator);
+            //output_sum += osc_getOutput(&oscillator);
+            output_sum += (osc_getOutput(&oscillator, 0) * oscillator.oscillator_mix[0]) >> 8;
+			output_sum += (osc_getOutput(&oscillator, 1) * oscillator.oscillator_mix[1]) >> 8;
+            //output_sum += lfo_getOutput(&synthesizer.pitchlfo[i]);
+            //Delay_ns(4);
+        }
+	}
+	//test_variable = output_sum;
+	output_sum = 127 + ((output_sum) >> 3);
+
+	//test_variable = output_sum;
+
+	GPIOC_PCOR = (0x000000FF);
+	GPIOC_PSOR = output_sum;
+	GPIOC_PCOR = (0b11 << 8);
+	Delay_ns(1);
+	GPIOC_PSOR = (1 << 9);
+	Delay_ns(1);
+	GPIOC_PCOR = (1 << 9);
+	GPIOC_PSOR = (1 << 8);
+	GPIOC_PCOR = (0x000000FF);
+	GPIOC_PSOR = (cpParameterList[fltrResonance] >> 8);
+	Delay_ns(1);
+	GPIOC_PSOR = (1 << 9);
+
 
 	//-------------------------------
 	// Volume and Filter envelope generator
 	//-------------------------------
+
 	envelope_update(&synthesizer.amplitudeEnvs[divider]);
 	envelope_update(&synthesizer.filterEnvs[divider]);
 	envelope_update(&synthesizer.resonantEnvs[divider]);
 	ramp_update(&synthesizer.pitchramp[divider]);
-	//osc_setAmplitude(&synthesizer.oscillators[divider], amplitude[divider]);
 
 	lfo_update(&synthesizer.filterlfo[divider]);
 	filter_total = (env_getOutput(&synthesizer.filterEnvs[divider]) + (cpParameterList[fltrCutoff] >> 8) +
 	aftertouch); //+ lfo_getOutput(&synthesizer.filterlfo[0]));
 	if (filter_total > 255) filter_total = 255;
-	//filter_total = 255;
-	//test_variable = filter_total;
-	//test_variable = ramp_getOutput(&synthesizer.pitchramp[0]);
 
 	amplitude[divider] = env_getOutput(&synthesizer.amplitudeEnvs[divider]);
     osc_setAmplitude(&synthesizer.oscillators[divider], amplitude[divider]);
-    //lfo_setLevel(&synthesizer.pitchlfo[divider], amplitude[divider]);
-    // test_variable = amplitude[0];
 
 
-    //
     GPIOB_PCOR = (1 << 23);
 	//Delay_ns(2);
     GPIOB_PSOR = divider << 20;
@@ -133,10 +162,13 @@ void ftm1_isr(void){
 	GPIOB_PCOR = (divider << 20);
 
 	lfo_update(&synthesizer.pitchlfo[divider]);
-    //lfo_setRate(&synthesizer.pitchlfo[divider], synthesizer.oscillators[divider].cv_pitch[0] - 1000);
+
 	osc_setPitch(&synthesizer.oscillators[divider], synthesizer.oscillators[divider].cv_pitch[0] +
             (cpParameterList[oscAfreq] >> 8) + ((lfo_getOutput(&synthesizer.pitchlfo[divider]) * cpParameterList[oscAMod])>>13) +
-            + ramp_getOutput(&synthesizer.pitchramp[divider]) + ((synthesizer.oscillators[divider].output[1] * cpParameterList[oscFMMod]) >> 9), 0);
+             + ((synthesizer.oscillators[divider].output[1] * cpParameterList[oscFMMod]) >> 9), 0);
+	//osc_setPitch(&synthesizer.oscillators[divider], synthesizer.oscillators[divider].cv_pitch[0] +
+	//												(cpParameterList[oscAfreq] >> 8) + ((lfo_getOutput(&synthesizer.pitchlfo[divider]) * cpParameterList[oscAMod])>>13) +
+	//												+ ramp_getOutput(&synthesizer.pitchramp[divider]) + ((synthesizer.oscillators[divider].output[1] * 0) >> 9), 0);
 
 	osc_setPitch(&synthesizer.oscillators[divider], synthesizer.oscillators[divider].cv_pitch[1] +
 			(cpParameterList[oscBfreq] >>8) + ((lfo_getOutput(&synthesizer.pitchlfo[divider]) * cpParameterList[oscBMod])>>13) +
@@ -145,37 +177,9 @@ void ftm1_isr(void){
 	//osc_setPitch(&synthesizer.oscillators[divider], synthesizer.oscillators[divider].cv_pitch[0],0);
 	//osc_setPitch(&synthesizer.oscillators[divider], synthesizer.oscillators[divider].cv_pitch[1],1);
 
-	//-------------------------------
-	//  Synthesizer/audio mixer
-	//-------------------------------
-
-	int16_t output_sum = 0;
-	for (auto &oscillator : synthesizer.oscillators) {
-        osc_update(&oscillator);
-        output_sum += osc_getOutput(&oscillator);
-        //output_sum += lfo_getOutput(&synthesizer.pitchlfo[i]);
-        Delay_ns(4);
-	}
-    //test_variable = output_sum;
-	output_sum = 127 + ((output_sum) >> 4);
-
-	//test_variable = output_sum;
-
-	GPIOC_PCOR = (0b11 << 8);
-	GPIOC_PCOR = (0x000000FF);
-	GPIOC_PSOR = output_sum;
-	Delay_ns(1);
-	GPIOC_PSOR = (1 << 9);
-	Delay_ns(1);
-	GPIOC_PCOR = (1 << 9);
-	GPIOC_PSOR = (1 << 8);
-	GPIOC_PCOR = (0x000000FF);
-	GPIOC_PSOR = (cpParameterList[fltrResonance] >> 8);
-	Delay_ns(1);
-	GPIOC_PSOR = (1 << 9);
 
 	osc_updateFrequancyTuningWord(&synthesizer.oscillators[divider]);
-    test_variable = FTM1_CNT - timer;
+	test_variable = FTM1_CNT - timer;
 
 	FTM1_SC &= ~FTM_SC_TOF;
 }
@@ -188,13 +192,14 @@ void interfaceCheck(){
     //test_variable = synthesizer.oscillators[1].cv_pitch[1];
     if(!(tik%1024)) {
         //test_variable++;
-        //Serial.println(test_variable);
+        Serial.println(test_variable);
         //static char dv[10] = {0};
         //sprintf(dv,"%8d",test_variable);
         //cposition(0, 2);
         //putsLCD(dv);
-    }    interfaceUpdate();
-    //}
+    }
+    interfaceUpdate();
+
 }
 
 //------------------------------------------------------------------------------
@@ -227,11 +232,11 @@ void set_envelopes(){
 	cpParameterList[AuxSus] = 0;
 	cpParameterList[AmpAtt] = 65535;
 	cpParameterList[AmpDec] = 65535;
-	cpParameterList[AmpRel] = 500;
+	cpParameterList[AmpRel] = 1;
 	cpParameterList[AmpSus] = 65535;
 	cpParameterList[rampAmount] = 0;
 	cpParameterList[rampRate] = 0;
-	cpParameterList[AmpAmp] = 255;
+	cpParameterList[AmpAmp] = UINT16_MAX;
 	cpParameterList[fltrAmp] = 255;
 	cpParameterList[AuxAmp] = 255;
 	spParameterList[spFltrEnvSpd] = 0;

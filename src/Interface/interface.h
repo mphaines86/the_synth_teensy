@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define NUM_OF_POTS 8
+#define PARAMETER_PAGES 8
 
 typedef  enum {
     parameterNone=0, parameterCont, parameterStep, parameterCust
@@ -25,12 +26,12 @@ typedef enum {
 } ptContinuousParameters_t;
 
 typedef enum {
-  spOscAWave=0, spOscBWave=1, spOscSync=2,
-   spFltrEnvTrig=3, spFltrEnvSpd=4,
-   spAmpEnvTrig=5, spAmpEnvSpd=6,
-   spAuxEnvTrig=7, spAuxEnvSpd=8,
-   spLfoAShape=9, spLfoAspeed=10, spLfoATrk=11, spLfoATrig=12,
-   spLfoBShape=13, spLfoBspeed=14, spLfoBTrk=15, spLfoBTrig=16,
+  spOscAWave=0, spOscBWave=1, spOscSync=2, spOscRing=3,
+   spFltrEnvTrig=4, spFltrEnvSpd=5,
+   spAmpEnvTrig=6, spAmpEnvSpd=7,
+   spAuxEnvTrig=8, spAuxEnvSpd=9,
+   spLfoAShape=10, spLfoAspeed=11, spLfoATrk=12, spLfoATrig=13,
+   spLfoBShape=14, spLfoBspeed=15, spLfoBTrk=16, spLfoBTrig=17,
 
   spCount
 

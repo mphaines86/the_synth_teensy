@@ -17,7 +17,7 @@ uint8_t NRPNlsb = 0;
 uint16_t NRPNParameter = 0;
 
 
-MIDI_CREATE_INSTANCE(HardwareSerial, Serial5, MIDI)
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial4, MIDI)
 
 uint16_t midiCombineBytes(uint8_t first, uint8_t second)
 {

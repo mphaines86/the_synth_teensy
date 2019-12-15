@@ -9,7 +9,6 @@
 
 #define TIME_BUFFER 100
 #define DEBOUNCE_MAX 20
-#define PARAMETER_PAGES 8
 #define SAMPLE_PAGES 16
 #define LAYOUT_PAGES 2
 #define POT_TIME 250
@@ -28,6 +27,7 @@ uint8_t spParameterBits[spCount] = {
         4, // wave A
         4, // wave B
         1, // sync
+        1, // ring
         1, // fltr
         1, //
         1, // Amp
@@ -69,96 +69,6 @@ enum interfacePage_e {
     iLeft=0, iRight, iParam, iSample, iLayout, iMatrix, iSettings, iPatch
 };
 
-struct interfaceParam_s{
-  interfaceParamType_e type;
-  uint8_t number;
-  const char * shortName;
-  const char * longName;
-  const char * values[8];
-};
-
-const struct interfaceParam_s interfaceParameters[PARAMETER_PAGES][8] = {
-    {
-        {.type=parameterCont, .number=oscAfreq, .shortName="AFrq", .longName="Osc A Frequancy", .values={""}},
-        {.type=parameterCont, .number=oscACrse, .shortName="ACrs", .longName="Osc A Coarse", .values={""}},
-        {.type=parameterCont, .number=oscAVol, .shortName="AVol", .longName="Osc A Volume", .values={""}},
-        {.type=parameterCont, .number=oscAMod, .shortName="AMod", .longName="Osc A Mod", .values={""}},
-        {.type=parameterStep, .number=spOscSync, .shortName="Sync", .longName="Osc Sync", .values={"On  ", "Off "}},
-        {.type=parameterStep, .number=spOscAWave, .shortName="Awav", .longName="Osc A Waveform", .values={""}},
-        {.type=parameterNone},
-        {.type=parameterNone},
-    },
-    {
-        {.type=parameterCont, .number=oscBfreq, .shortName="BFrq", .longName="Osc B Frequancy", .values={""}},
-        {.type=parameterCont, .number=oscBCrse, .shortName="BCrs", .longName="Osc B Coarse", .values={""}},
-        {.type=parameterCont, .number=oscBVol, .shortName="BVol", .longName="Osc B Volume", .values={""}},
-        {.type=parameterCont, .number=oscBMod, .shortName="BMod", .longName="Osc B Mod", .values={""}},
-        {.type=parameterCont, .number=oscFMMod, .shortName="Fmod", .longName="Osc B FM Mod", .values={""}},
-        {.type=parameterStep, .number=spOscBWave,.shortName="Bwav", .longName="Osc B Waveform", .values={""}},
-        {.type=parameterNone},
-        {.type=parameterNone},
-    },
-    {
-        {.type=parameterCont, .number=fltrCutoff, .shortName="FCut", .longName="Filter Cutoff", .values={""}},
-        {.type=parameterCont, .number=fltrResonance, .shortName="FRes", .longName="Filter Resonance", .values={""}},
-        {.type=parameterCont, .number=fltrEnvMnt, .shortName="FEnv", .longName="Filter Env Amount", .values={""}},
-        {.type=parameterCont, .number=fltrMod, .shortName="FMod", .longName="Filter Modulation", .values={""}},
-        {.type=parameterNone},
-        {.type=parameterNone},
-        {.type=parameterNone},
-        {.type=parameterNone},
-    },
-    {
-        {.type=parameterCont, .number=fltrAtt, .shortName="FAtk", .longName="Filter Attack", .values={""}},
-        {.type=parameterCont, .number=fltrDec, .shortName="FDec", .longName="Filter Decay", .values={""}},
-        {.type=parameterCont, .number=fltrSus, .shortName="FSus", .longName="Filter Sustain", .values={""}},
-        {.type=parameterCont, .number=fltrRel, .shortName="FRel", .longName="Filter Release", .values={""}},
-        {.type=parameterCont, .number=fltrAmp, .shortName="FAmp", .longName="Filter Env Amp", .values={""}},
-        {.type=parameterStep, .number=spFltrEnvTrig, .shortName="FTrg", .longName="Filter Env Trig", .values={"Sngl", "Mlti"}},
-        {.type=parameterStep, .number=spFltrEnvSpd, .shortName="FSpd", .longName="Filter Env Speed", .values={"Fast", "Slow"}},
-        {.type=parameterNone},
-    },
-    {
-        {.type=parameterCont, .number=AmpAtt, .shortName="AAtk", .longName="Ampitude Attack", .values={""}},
-        {.type=parameterCont, .number=AmpDec, .shortName="ADec", .longName="Amplitude Decay", .values={""}},
-        {.type=parameterCont, .number=AmpSus, .shortName="ASus", .longName="Amplitude Sustain", .values={""}},
-        {.type=parameterCont, .number=AmpRel, .shortName="ARel", .longName="Amplitude Release", .values={""}},
-        {.type=parameterCont, .number=AmpAmp, .shortName="AAmp", .longName="Amplitude Env Amp", .values={""}},
-        {.type=parameterStep, .number=spAmpEnvTrig, .shortName="ATrg", .longName="Amplitude Env Trig", .values={"Sngl","Mlti"}},
-        {.type=parameterStep, .number=spAmpEnvSpd, .shortName="ASpd", .longName="Amplitude Env Speed", .values={"Fast", "Slow"}},
-        {.type=parameterNone},
-    },
-    {
-        {.type=parameterCont, .number=AuxAtt, .shortName="XAtk", .longName="Auxiliry Attack", .values={""}},
-        {.type=parameterCont, .number=AuxDec, .shortName="XDec", .longName="Auxiliry Decay", .values={""}},
-        {.type=parameterCont, .number=AuxSus, .shortName="XSus", .longName="Auxiliry Sustain", .values={""}},
-        {.type=parameterCont, .number=AuxRel, .shortName="XRel", .longName="Auxiliry Release", .values={""}},
-        {.type=parameterCont, .number=AuxAmp, .shortName="XAmp", .longName="Auxiliry Env Amp", .values={""}},
-        {.type=parameterStep, .number=spAuxEnvTrig, .shortName="XTrg", .longName="Auxiliry Env Trig", .values={"Sngl", "Mlti"}},
-        {.type=parameterStep, .number=spAuxEnvSpd, .shortName="XSpd", .longName="Auxiliry Env Speed", .values={"Fast", "Slow"}},
-        {.type=parameterNone},
-    },
-    {
-        {.type=parameterCont, .number=lfoAPitch, .shortName="AAmp", .longName="LFO A Amplitude", .values={""}},
-        {.type=parameterCont, .number=lfoARate, .shortName="ARte", .longName="LFO A Rate", .values={""}},
-        {.type=parameterStep, .number=spLfoAShape, .shortName="AShp", .longName="LFO A Shape", .values={"Sqr ","Tri ", "Saw ", "Sine"}},
-        {.type=parameterStep, .number=spLfoAspeed, .shortName="Aspd", .longName="LFO A Speed", .values={""}},
-        {.type=parameterStep, .number=spLfoATrk, .shortName="ATrk", .longName="LFO A Tracking", .values={""}},
-        {.type=parameterStep, .number=spLfoATrig, .shortName="ATrg", .longName="LFO A Trig", .values={""}},
-        {.type=parameterCont, .number=rampAmount, .shortName="RAmt", .longName="Ramp Amplitude", .values={""}},
-        {.type=parameterCont, .number=rampRate, .shortName="RRte", .longName="Ramp Rate", .values={""}},
-    },
-    {
-        {.type=parameterCont, .number=lfoBPitch, .shortName="BAmp", .longName="LFO B Amplitude", .values={""}},
-        {.type=parameterCont, .number=lfoBRate, .shortName="BRte", .longName="LFO B Rate", .values={""}},
-        {.type=parameterStep, .number=spLfoBShape, .shortName="BShp", .longName="LFO B Shape", .values={"Sqr ", "Tri ", "Saw ", "Sine" }},
-        {.type=parameterStep, .number=spLfoBspeed, .shortName="Bspd", .longName="LFO B Speed", .values={""}},
-        {.type=parameterStep, .number=spLfoBTrk, .shortName="BTrk", .longName="LFO B Tracking", .values={""}},
-        {.type=parameterStep, .number=spLfoBTrig, .shortName="BTrg", .longName="LFO B Trig", .values={""}},
-        {.type=parameterNone},
-        {.type=parameterNone},
-    },
-};
 
 
 static int uint16Compare(const void * a,const void * b)
@@ -201,8 +111,8 @@ static void handleUserInput(int8_t input){
     GPIOD_PCOR = (interface.increament_potentiometer << 11);
 
     if (interface.page<iPatch && input > -1){
-        Serial.print(input);
-        Serial.print(interface.param_page);
+        // Serial.print(input);
+        // Serial.print(interface.param_page);
         if (input == iParam){
             cmd2LCD(0x01);
             delay(2);
@@ -250,26 +160,26 @@ static void handleUserInput(int8_t input){
         interface.page = input;
         switch (input){
             case iLeft:
-                interfaceUpdatePage();
-                break;
-
             case iRight:
                 interfaceUpdatePage();
                 break;
 
-            case iParam:
-                interface.param_page = 0;
-                interfaceUpdatePage();
-                break;
+                //interfaceUpdatePage();
+                //break;
 
+            case iParam:
             case iSample:
-                interface.param_page = 0;
-                interfaceUpdatePage();
-                break;
             case iLayout:
                 interface.param_page = 0;
                 interfaceUpdatePage();
                 break;
+
+                /*interface.param_page = 0;
+                interfaceUpdatePage();
+                break;
+                interface.param_page = 0;
+                interfaceUpdatePage();
+                break;*/
             case iMatrix:
             case iSettings:
             case iPatch: {
@@ -292,10 +202,8 @@ static void handleUserInput(int8_t input){
         switch (interface.page) {
             case iParam: {
                 input = -input - 1;
-                const struct interfaceParam_s *parameter;
-                parameter = &interfaceParameters[interface.param_page][input];
-                interfaceParameterHandleUserInput(input, interface.pot_value[input],
-                        parameter->number, parameter->type);
+
+                interfaceParameterHandleUserInput(input, interface.pot_value[input], interface.param_page);
 
                 parameterChange();
                 break;
@@ -323,55 +231,7 @@ void interfaceUpdatePage(){
     switch (interface.page) {
         case iParam: {
             interface.param_page %= PARAMETER_PAGES;
-            cmd2LCD(0x01);
-            delay(2);
-            const char *space = " ";
-            cposition(0, 0);
-            for (int i = 0; i < PARAMETER_PAGES / 2; ++i) {
-                //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
-                if (interfaceParameters[interface.param_page][i].type != parameterNone) {
-                    putsLCD(interfaceParameters[interface.param_page][i].shortName);
-                    putsLCD(space);
-                }
-            }
-
-            cposition(0, 1);
-            for (int i = 0; i < PARAMETER_PAGES / 2; ++i) {
-                static char dv[4] = {0};
-                //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
-                if (interfaceParameters[interface.param_page][i].type == parameterCont) {
-                    sprintf(dv, "%4d", cpParameterList[interfaceParameters[interface.param_page][i].number] >> 8);
-                    putsLCD(dv);
-                    putsLCD(space);
-                } else if (interfaceParameters[interface.param_page][i].type == parameterStep) {
-                    sprintf(dv, "%4d", spParameterList[interfaceParameters[interface.param_page][i].number]);
-                    putsLCD(dv);
-                    putsLCD(space);
-                }
-            }
-
-            cposition(0, 2);
-            for (int i = PARAMETER_PAGES / 2; i < PARAMETER_PAGES; ++i) {
-                if (interfaceParameters[interface.param_page][i].type != parameterNone) {
-                    putsLCD(interfaceParameters[interface.param_page][i].shortName);
-                    putsLCD(" ");
-                }
-            }
-
-            cposition(0, 3);
-            for (int i = PARAMETER_PAGES / 2; i < PARAMETER_PAGES; ++i) {
-                static char dv[4] = {0};
-                //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
-                if (interfaceParameters[interface.param_page][i].type == parameterCont) {
-                    sprintf(dv, "%4d", cpParameterList[interfaceParameters[interface.param_page][i].number] >> 8);
-                    putsLCD(dv);
-                    putsLCD(space);
-                } else if (interfaceParameters[interface.param_page][i].type == parameterStep) {
-                    sprintf(dv, "%4d", spParameterList[interfaceParameters[interface.param_page][i].number]);
-                    putsLCD(dv);
-                    putsLCD(space);
-                }
-            }
+            interfaceParameterUpdatePage(interface.param_page);
             break;
         }
         case iSample: {

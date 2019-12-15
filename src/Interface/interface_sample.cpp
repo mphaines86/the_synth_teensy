@@ -91,6 +91,7 @@ uint8_t interfaceSampleFindZeroPoint(uint8_t page, uint8_t paramPage){
         NVIC_ENABLE_IRQ(IRQ_FTM1);
         return 1;
     }
+    return 0;
 }
 
 void interfaceSampleUpdatePage(uint8_t paramPage) {

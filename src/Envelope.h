@@ -63,12 +63,12 @@ static inline void updateStageVariables(struct envelope_struct * envelope, Envel
 
 		case ATTACK:
 			envelope->stageAdd = (envelope->stageLevel * envelope->levelCV) >> 16;
-			envelope->stageMul = ((65535 - envelope->stageLevel) * envelope->levelCV )>> 16;
+			envelope->stageMul = ((UINT16_MAX - envelope->stageLevel) * envelope->levelCV )>> 16;
 			envelope->stageIncreament=envelope->attackIncreament;
 			break;
 		case DECAY:
 			envelope->stageAdd = (envelope->sustainCV * envelope->levelCV) >> 16;
-			envelope->stageMul = ((65535 - envelope->sustainCV) * envelope->levelCV )>> 16;
+			envelope->stageMul = ((UINT16_MAX - envelope->sustainCV) * envelope->levelCV )>> 16;
 			envelope->stageIncreament=envelope->decayIncreament;
 			break;
 		case SUSTAIN:
