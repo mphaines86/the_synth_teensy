@@ -6,6 +6,7 @@
 #include "tables_due.h"
 #include "interface_sample.h"
 #include "interface_parameters.h"
+#include "interface_patches.h"
 
 #define TIME_BUFFER 100
 #define DEBOUNCE_MAX 20
@@ -55,7 +56,7 @@ static struct {
 
     int8_t integrator[NUM_OF_BUTTONS];
     uint8_t increament_button;
-    uint8_t param_page;
+    int16_t param_page;
     uint8_t page;
     uint32_t lastPressTime[NUM_OF_BUTTONS];
     uint64_t lastButtonPress;
@@ -116,9 +117,14 @@ static void handleUserInput(int8_t input){
         if (input == iParam){
             cmd2LCD(0x01);
             delay(2);
+            //interfacePatchesLoadPatch(patchInfo.number);
+
+            interface.param_page = patchInfo.number;
+            static char dv[4] = {0};
             cposition(0, 0);
-            const char *message = "Patch saving not    implemented :P";
-            putsLCD(message);
+            sprintf(dv, "%3d:", patchInfo.number);
+            putsLCD(dv);
+            putsLCD((char *) patchInfo.name);
             return;
         }
         else if (input < 2){
@@ -127,16 +133,6 @@ static void handleUserInput(int8_t input){
         }
 
         switch (interface.page) {
-            /*case iLeft:
-                interfaceUpdatePage();
-                break;
-
-            case iRight:
-                interfaceUpdatePage();
-                break;
-            case iParam: {
-                break;
-            }*/
             case iSample: {
                 if (!interfaceSampleFindZeroPoint(input, interface.param_page)) {
                     return;
@@ -157,7 +153,6 @@ static void handleUserInput(int8_t input){
     }
 
     if (interface.page==iPatch && input > -1){
-        interface.page = input;
         switch (input){
             case iLeft:
             case iRight:
@@ -170,6 +165,7 @@ static void handleUserInput(int8_t input){
             case iParam:
             case iSample:
             case iLayout:
+                interface.page = input;
                 interface.param_page = 0;
                 interfaceUpdatePage();
                 break;
@@ -182,12 +178,9 @@ static void handleUserInput(int8_t input){
                 break;*/
             case iMatrix:
             case iSettings:
+                break;
             case iPatch: {
-                cmd2LCD(0x01);
-                delay(2);
-                cposition(0, 0);
-                const char *message = "Patch saving not    implemented :P";
-                putsLCD(message);
+                interfaceUpdatePage();
                 break;
             }
             default:
@@ -230,11 +223,16 @@ void interfaceUpdatePage(){
 
     switch (interface.page) {
         case iParam: {
+            if (interface.param_page == -1)
+                interface.param_page = PARAMETER_PAGES -1;
+
             interface.param_page %= PARAMETER_PAGES;
             interfaceParameterUpdatePage(interface.param_page);
             break;
         }
         case iSample: {
+            if (interface.param_page == -1)
+                interface.param_page = SAMPLE_PAGES-1;
             interface.param_page %= SAMPLE_PAGES;
             interfaceSampleUpdatePage(interface.param_page);
             break;
@@ -250,7 +248,14 @@ void interfaceUpdatePage(){
                 putsLCD(row1);
                 putsLCD(waveStruct[interface.param_page].name);
             }
+        case iPatch:{
+            if (interface.param_page == -1)
+                interface.param_page = EEPROM_NUM_OF_PATCHES-1;
 
+            interface.param_page %= EEPROM_NUM_OF_PATCHES;
+            interfacePatchesUpdatePage(interface.param_page);
+            break;
+        }
         default:
             break;
     }
@@ -395,8 +400,11 @@ void interfaceInit() {
     analogReadRes(16);
 
     interface.temp_parameter = 255;
-    interface.param_page = 0;
     interface.page=iPatch;
+
+    Serial.println("Patch Codes: ");
+    Serial.println(interfacePatchesInitSystem());
+    interface.param_page = patchInfo.number;
     handleUserInput(interface.page);
     //interfaceUpdatePage();
     interfaceUpdate();

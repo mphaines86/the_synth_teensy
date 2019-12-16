@@ -192,14 +192,13 @@ void interfaceCheck(){
     //test_variable = synthesizer.oscillators[1].cv_pitch[1];
     if(!(tik%1024)) {
         //test_variable++;
-        Serial.println(test_variable);
+        //Serial.println(test_variable);
         //static char dv[10] = {0};
         //sprintf(dv,"%8d",test_variable);
         //cposition(0, 2);
         //putsLCD(dv);
     }
     interfaceUpdate();
-
 }
 
 //------------------------------------------------------------------------------
@@ -209,14 +208,14 @@ void interfaceCheck(){
 
 void set_envelopes(){
 
-	int i = 0;
+	/*int i = 0;
 	for(i = 0; i < SYNTH_VOICE_COUNT; i++){
 		envelope_setup(&synthesizer.amplitudeEnvs[i], 65535, 65535, 65535, 500, 0, 0, UINT16_MAX);
 		envelope_setup(&synthesizer.filterEnvs[i], 65535, 65535, 65535, 1, 0, 0, UINT16_MAX);
 		//envelope_setup(&synthesizer.resonantEnvs[i], 46,56,45333,19);
 		envelope_setup(&synthesizer.resonantEnvs[i], 65535, 75, 65535, 500, 0, 0, UINT16_MAX);
 		ramp_setup(&synthesizer.pitchramp[i], 0);
-	}
+	}*/
 
 	cpParameterList[fltrCutoff] = 65535;
 	cpParameterList[fltrEnvMnt] = 0;
@@ -250,7 +249,7 @@ void set_envelopes(){
 
 
 void set_oscillators(){
-	int i = 0;
+	//int i = 0;
 	cpParameterList[oscAVol] = 65535;
 	cpParameterList[oscBVol] = 65535;
 	cpParameterList[oscAfreq] = 0;
@@ -263,13 +262,13 @@ void set_oscillators(){
 	cpParameterList[oscFMMod] = 0;
 	spParameterList[spOscAWave] = 0;
 	spParameterList[spOscBWave] = 0;
-	for(i = 0; i < SYNTH_VOICE_COUNT; i++){
+	/*for(i = 0; i < SYNTH_VOICE_COUNT; i++){
 		osc_setParameters(&synthesizer.oscillators[i], static_cast<oscSyncMode_t>(spParameterList[spOscSync]),
 				cpParameterList[oscAVol], cpParameterList[oscBVol]);
 		//setVoices(&synthesizer.oscillators[i], &string_C6, 0, 127);
 		osc_setWaves(&synthesizer.oscillators[i], &waveStruct[15],0, 127, 0);
 		osc_setWaves(&synthesizer.oscillators[i], &waveStruct[15],0, 127, 1);
-	}
+	}*/
 
 	//setVoices(&synthesizer.oscillators[7], &snare,0,127);
 
@@ -278,14 +277,14 @@ void set_oscillators(){
 void set_lfo(){
 	spParameterList[spLfoATrk] = 0;
 	spParameterList[spLfoBTrk] = 0;
-	int i = 0;
+	/*int i = 0;
 	for (i = 0; i< SYNTH_VOICE_COUNT; i++){
         lfo_init(&synthesizer.pitchlfo[i], lfoSine, 5000, 254, 0);
         lfo_init(&synthesizer.filterlfo[i], lfoSine, 5000, 254, 0);
 		synthesizer.pitchlfo[i].key_follow = spParameterList[spLfoATrk];
 		synthesizer.filterlfo[i].key_follow = spParameterList[spLfoBTrk];
 
-	}
+	}*/
 	cpParameterList[lfoARate] = 0;
 	cpParameterList[lfoAPitch] = 0;
 	spParameterList[spLfoATrig] = 0;
@@ -316,16 +315,16 @@ void synth_begin()
     FTM1_SC = FTM_SC_CLKS(0b01) | FTM_SC_PS(0b0) | FTM_SC_TOF | FTM_SC_TOIE;
     NVIC_ENABLE_IRQ(IRQ_FTM1);
 
-    set_oscillators();
+    /*set_oscillators();
     set_envelopes();
-    set_lfo();
+    set_lfo();*/
 
 }
 
 
 void note_trigger(byte given_pitch, byte velocity) {
 
-	int8_t reset_flag = 0;
+	// int8_t reset_flag = 0;
 	int8_t voice=-1;
 	uint8_t i = 0;
 	uint32_t oldest_time_stamp=UINT32_MAX;

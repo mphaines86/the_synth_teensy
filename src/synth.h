@@ -44,6 +44,10 @@ void note_trigger(byte given_pitch, byte velocity);
 void NoteRelease(byte given_pitch);
 void parameterChange();
 
+void set_envelopes();
+void set_oscillators();
+void set_lfo();
+
 
 
 #endif /* INCFILE1_H_ */

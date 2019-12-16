@@ -2,7 +2,7 @@
 #include "main.h"
 #include "Arduino.h"
 #include "synth.h"
-
+#include "system/i2c_t3.h"
 int current_notes = 0;
 byte pitch_bend_channel[] = {0, 0, 0, 0, 0, 0, 0, 0,};
 

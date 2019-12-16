@@ -79,8 +79,8 @@
 //                      Target Addr + Data payload.  Default is: 1byte Addr + 258byte Data
 //                      (this can be substantially reduced if working with sensors or small data packets)
 //
-#define I2C_TX_BUFFER_LENGTH 64
-#define I2C_RX_BUFFER_LENGTH 64
+#define I2C_TX_BUFFER_LENGTH 259
+#define I2C_RX_BUFFER_LENGTH 259
 
 // ------------------------------------------------------------------------------------------------------
 // Interrupt flag - uncomment and set below to make the specified pin high whenever the
