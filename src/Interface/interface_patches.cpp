@@ -20,6 +20,7 @@ struct patch_struct_t patchInfo = {
 };
 
 uint8_t data_buffer[EEPROM_PATCH_DATA_SIZE] = {0};
+uint8_t patch_name_edit_marker = 0;
 
 static int8_t readData(uint8_t i2c_addr, uint16_t addr, uint8_t *data, uint16_t size){
     Wire.beginTransmission(i2c_addr);
@@ -113,7 +114,7 @@ int8_t interfacePatchesInitSystem(){
     uint8_t patchNumber = 0;
 
     if(readData(80, 0, &patchNumber, 1) != 1){
-        Serial.println("Failed to get Patch Number");
+        Serial.println("PatchInitSys: Failed to get Patch Number");
         return -1;
     }
 
@@ -121,7 +122,7 @@ int8_t interfacePatchesInitSystem(){
     if (patchNumber > EEPROM_NUM_OF_PATCHES){
         patchNumber = 0;
         if(writeData(80, 0, &patchNumber, 1) != 1){
-            Serial.println("Failed to set new patch number");
+            Serial.println("PatchInitSys: Failed to set new patch number");
             return -2;
         }
     }
@@ -132,16 +133,22 @@ int8_t interfacePatchesInitSystem(){
     uint16_t patchAddress = EEPROM_PATCH_DATA_SIZE * patchNumber + 1;
 
     if(readData(80, patchAddress, &patchValid, 1) != 1) {
-        Serial.println("Failed to check patch validity");
+        Serial.println("PatchInitSys: Failed to check patch validity");
         return -1;
     }
 
-    if(patchAddress != EEPROM_PATCH_CHECK){
-        Serial.print("initiating patch ");
-        Serial.println(patchNumber);
+    if(patchValid != EEPROM_PATCH_CHECK){
+
         if(interfacePatchesInitPatch(patchNumber)!=1){
+            Serial.print("PatchInitSys: Failed to init patch");
+            Serial.println(patchNumber);
             return -1;
         }
+    }
+
+    if(interfacePatchesLoadPatch(patchInfo.number)!=1){
+        Serial.println("PatchInitSys: Failed to load patch");
+        return -1;
     }
 
     return 1;
@@ -178,7 +185,7 @@ int8_t interfacePatchesInitPatch(uint8_t patch){
 
     const char *value = &name[0];
 
-    data_buffer[0] = EEPROM_PATCH_CHECK -1;
+    data_buffer[0] = EEPROM_PATCH_CHECK;
     for(uint8_t i=1; i<PATCH_NAME_LENGTH+1; i++){
         data_buffer[i] = (uint8_t)*value++;
     }
@@ -189,6 +196,9 @@ int8_t interfacePatchesInitPatch(uint8_t patch){
         return -1;
     }
 
+    memcpy(&patchInfo.name[0], &name[0], PATCH_NAME_LENGTH*sizeof(char));
+
+
     return 1;
 }
 
@@ -198,10 +208,12 @@ int8_t interfacePatchesLoadPatch(uint8_t patch){
     uint16_t patchAddress = EEPROM_PATCH_DATA_SIZE * patchInfo.number + 1;
 
     if(readData(80, patchAddress, &patchValid, 1) != 1) {
+        Serial.println("PatchLoad: Failed to Verify patch");
         return -1;
     }
 
-    if(patchAddress != EEPROM_PATCH_CHECK){
+    if(patchValid != EEPROM_PATCH_CHECK){
+        Serial.println("PatchLoad: Patch is not valid");
         interfacePatchesInitPatch(patchInfo.number);
     }
 
@@ -209,7 +221,7 @@ int8_t interfacePatchesLoadPatch(uint8_t patch){
     if(readData(80, patchAddress+1, data_buffer, EEPROM_PATCH_DATA_SIZE) != 1)
         return -1;
 
-    memcpy(&patchInfo.name, &data_buffer, PATCH_NAME_LENGTH*sizeof(uint8_t));
+    memcpy(&patchInfo.name[0], (char *) &data_buffer[0], PATCH_NAME_LENGTH*sizeof(char));
     uint8_t data_index = 9;
 
     for (uint16_t &i : cpParameterList) {
@@ -225,11 +237,25 @@ int8_t interfacePatchesLoadPatch(uint8_t patch){
     if(writeData(80, 0, &patch, 1)!=1){
         return -1;
     }
+    Serial.print("PatchLoad: Loaded Patch ");
+    Serial.println(patch);
 
     return 1;
 }
 
-int8_t interfacePatchesSavePatch(uint8_t patch){const char *name= "InitPtch";
+int8_t interfacePatchesSavePatch(uint8_t patch){
+    if(patchInfo.writeProtect){
+        cmd2LCD(0x01);
+        delay(2);
+        cposition(0,0);
+        const char *row1 = "Patch Write Protected!";
+        putsLCD(row1);
+        delay(3000);
+
+        return 0;
+    }
+
+    const char *name= "InitPtch";
 
     uint8_t data_index=PATCH_NAME_LENGTH+2;
 
@@ -251,29 +277,96 @@ int8_t interfacePatchesSavePatch(uint8_t patch){const char *name= "InitPtch";
         data_index++;
     }
 
+    const char *value = patchInfo.name[0];
+    memcpy(&data_buffer[1], (uint8_t *) &patchInfo.name[0], PATCH_NAME_LENGTH*sizeof(uint8_t));
     data_buffer[0] = EEPROM_PATCH_CHECK;
-    for(uint8_t i=1; i<PATCH_NAME_LENGTH+1; i++){
-        data_buffer[i] = (uint8_t)*name++;
-    }
+    //for(uint8_t i=1; i<PATCH_NAME_LENGTH+1; i++){
+        //memcpy(&data_buffer[i], &patchInfo.name[i-1], PATCH_NAME_LENGTH*sizeof(uint8_t));
+        //data_buffer[i] = (uint8_t) *(*(patchInfo.name+i));
+    //}
     data_buffer[PATCH_NAME_LENGTH+1] = patchInfo.writeProtect;
 
     if(writeData(80, patch*EEPROM_PATCH_DATA_SIZE+1, data_buffer, EEPROM_PATCH_DATA_SIZE)!=1){
+        Serial.println("PatchSave: Failed to save patch");
         return -1;
     }
-    
+
+    Serial.print("PatchSave: Saved Patch ");
+    Serial.println(patch);
+
     return 1;
 }
 
 void interfacePatchesUpdatePage(uint8_t patch) {
-    patchInfo.number=patch;
-    interfacePatchesLoadPatch(patch);
+    if(patch!=patchInfo.number) {
+        patchInfo.number = patch;
+        interfacePatchesLoadPatch(patch);
+    }
 
     cmd2LCD(0x01);
     delay(2);
+
+    Serial.println((char *) &patchInfo.name[0]);
 
     static char dv[4] = {0};
     cposition(0, 0);
     sprintf(dv, "%3d:", patchInfo.number);
     putsLCD(dv);
     putsLCD((char *) patchInfo.name);
+}
+
+void interfacePatchesSetWriteProtect(uint8_t value){
+
+    cmd2LCD(0x01);
+    delay(2);
+    cposition(0,0);
+    const char *row1 = "Write Protect Set";
+    putsLCD(row1);
+
+    patchInfo.writeProtect = value;
+    writeData(80, patchInfo.number*EEPROM_PATCH_DATA_SIZE + PATCH_NAME_LENGTH + 1, &patchInfo.writeProtect, 1);
+
+    delay(3000);
+
+}
+
+int8_t interfacePatchesUpdateName(int8_t input){
+
+    char character;
+
+    if (input == 10){
+        cmd2LCD(0x01);
+        delay(2);
+        cposition(0,0);
+        const char *row1 = "Patch Name:";
+        putsLCD(row1);
+        for(uint8_t i=0; i<PATCH_NAME_LENGTH; i++) {
+            character = static_cast<char>(255 / 224 * (interfaceGetPotValues(i) >> 8) + 32);
+            cposition(i,1);
+            putcLCD(character);
+            //patchInfo.name[i] = reinterpret_cast<char *>(character);
+            //*(patchInfo.name + i) = (char *) character;
+        }
+        //patch_name_edit_marker++;
+    }
+
+    if (input==1){
+        unsigned char buffer[PATCH_NAME_LENGTH] = {0};
+        for(uint8_t i=0; i < PATCH_NAME_LENGTH; i++){
+            buffer[i] = static_cast<unsigned char>(255 / 224 * (interfaceGetPotValues(i) >> 8) + 32);
+        }
+        memcpy(&patchInfo.name[0], (char *) &buffer[0], PATCH_NAME_LENGTH*sizeof(char));
+        //patch_name_edit_marker=0;
+        return 1;
+    }
+
+    input = -input - 1;
+    character = static_cast<char>(255/224 * (interfaceGetPotValues(input) >> 8) + 32);
+    //patchInfo.name[input] = reinterpret_cast<char *>(character);
+
+    cposition(input,1);
+    putcLCD(character);
+    //Serial.println(character);
+    return 0;
+
 }

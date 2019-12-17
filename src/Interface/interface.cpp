@@ -13,7 +13,7 @@
 #define SAMPLE_PAGES 16
 #define LAYOUT_PAGES 2
 #define POT_TIME 250
-#define POT_THRESHOLD 1000
+#define POT_THRESHOLD 511
 #define NUM_OF_BUTTONS 8
 #define BUTTON_TIME 250
 #define NUM_OF_SAMPLES 20
@@ -58,10 +58,11 @@ static struct {
     uint8_t increament_button;
     int16_t param_page;
     uint8_t page;
+    uint8_t current_patch;
     uint32_t lastPressTime[NUM_OF_BUTTONS];
     uint64_t lastButtonPress;
 
-    uint8_t temp_parameter;
+    uint8_t hold_parameter;
 
 } interface;
 
@@ -111,20 +112,27 @@ static void handleUserInput(int8_t input){
     GPIOA_PSOR = (1 << 17);
     GPIOD_PCOR = (interface.increament_potentiometer << 11);
 
-    if (interface.page<iPatch && input > -1){
+    if (interface.hold_parameter){
+        switch (interface.page){
+            case iParam:
+                if(interfacePatchesUpdateName(input)) {
+                    interface.hold_parameter = 0;
+                    //Serial.println((char *)patchInfo.name);
+                    interfaceUpdatePage();
+                }
+                break;
+        }
+        return;
+    }
+    else if (interface.page<iPatch && input > -1){
         // Serial.print(input);
-        // Serial.print(interface.param_page);
+        //Serial.print(interface.param_page);
         if (input == iParam){
-            cmd2LCD(0x01);
-            delay(2);
-            //interfacePatchesLoadPatch(patchInfo.number);
+            interface.page=iPatch;
+            interface.param_page=patchInfo.number;
 
-            interface.param_page = patchInfo.number;
-            static char dv[4] = {0};
-            cposition(0, 0);
-            sprintf(dv, "%3d:", patchInfo.number);
-            putsLCD(dv);
-            putsLCD((char *) patchInfo.name);
+            interfacePatchesUpdatePage(patchInfo.number);
+
             return;
         }
         else if (input < 2){
@@ -133,6 +141,24 @@ static void handleUserInput(int8_t input){
         }
 
         switch (interface.page) {
+            case iParam:
+                switch (input){
+                    case iSample:{
+                        interfacePatchesSavePatch(patchInfo.number);
+                        return;
+                    }
+                    case iLayout:{
+                        interfacePatchesInitPatch(patchInfo.number);
+                        //interfacePatchesSetWriteProtect(static_cast<uint8_t>(!patchInfo.writeProtect));
+                        interfaceUpdatePage();
+                        return;
+                    }
+                    case iMatrix:{
+                        interface.hold_parameter = 1;
+                        interfacePatchesUpdateName(10);
+                        return;
+                    }
+                }
             case iSample: {
                 if (!interfaceSampleFindZeroPoint(input, interface.param_page)) {
                     return;
@@ -141,7 +167,7 @@ static void handleUserInput(int8_t input){
                 delay(2);
                 parameterChange();
                 interfaceUpdatePage();
-                break;
+                return;
             }
             case iLayout:{
                 break;
@@ -151,13 +177,12 @@ static void handleUserInput(int8_t input){
                 break;
         }
     }
-
-    if (interface.page==iPatch && input > -1){
+    else if (interface.page==iPatch && input > -1){
         switch (input){
             case iLeft:
             case iRight:
                 interfaceUpdatePage();
-                break;
+                return;
 
                 //interfaceUpdatePage();
                 //break;
@@ -168,7 +193,7 @@ static void handleUserInput(int8_t input){
                 interface.page = input;
                 interface.param_page = 0;
                 interfaceUpdatePage();
-                break;
+                return;
 
                 /*interface.param_page = 0;
                 interfaceUpdatePage();
@@ -178,20 +203,17 @@ static void handleUserInput(int8_t input){
                 break;*/
             case iMatrix:
             case iSettings:
-                break;
+                return;
             case iPatch: {
                 interfaceUpdatePage();
-                break;
+                return;
             }
             default:
-                break;
+                return;
         }
 
     }
-
-
-
-    if(input<iLeft){
+    else if(input<iLeft){
         switch (interface.page) {
             case iParam: {
                 input = -input - 1;
@@ -217,7 +239,7 @@ static void handleUserInput(int8_t input){
                 break;
         }
     }
-  }
+}
 
 void interfaceUpdatePage(){
 
@@ -227,7 +249,9 @@ void interfaceUpdatePage(){
                 interface.param_page = PARAMETER_PAGES -1;
 
             interface.param_page %= PARAMETER_PAGES;
+            Serial.println((char *) &patchInfo.name[0]);
             interfaceParameterUpdatePage(interface.param_page);
+            Serial.println((char *) &patchInfo.name[0]);
             break;
         }
         case iSample: {
@@ -248,6 +272,7 @@ void interfaceUpdatePage(){
                 putsLCD(row1);
                 putsLCD(waveStruct[interface.param_page].name);
             }
+            break;
         case iPatch:{
             if (interface.param_page == -1)
                 interface.param_page = EEPROM_NUM_OF_PATCHES-1;
@@ -289,10 +314,12 @@ static void readButton(){
                 if (interface.page == iPatch) {
                     //Serial.println("Patch");
                     handleUserInput(interface.increament_button);
-                } else if (interface.increament_button == 2){
-                    interface.page = iPatch;
-                    handleUserInput(interface.page);
-                }else{
+                }
+                //else if (interface.increament_button == 2){
+                //    interface.page = iPatch;
+                //    handleUserInput(interface.page);
+                //}
+                else{
                     handleUserInput(interface.increament_button);
                 }
             }
@@ -342,12 +369,12 @@ static void readPotentiometers(){
 
         new_value = tmp[NUM_OF_SAMPLES/2];
 
-        if (abs(new_value-interface.pot_value[interface.increament_potentiometer]) >= POT_THRESHOLD){
+        if (abs((int32_t)(new_value-interface.pot_value[interface.increament_potentiometer])) >= POT_THRESHOLD){
             if(tik - interface.pot_time[interface.increament_potentiometer] >= POT_TIME) {
                 interface.pot_value[interface.increament_potentiometer] = new_value;
                 handleUserInput(-interface.increament_potentiometer-1);
             }
-            else if (abs(new_value-interface.pot_value[interface.increament_potentiometer]) >= 2*POT_THRESHOLD){
+            else if (abs((int32_t)(new_value-interface.pot_value[interface.increament_potentiometer])) >= 2*POT_THRESHOLD){
                 interface.pot_value[interface.increament_potentiometer] = new_value;
                 handleUserInput(-interface.increament_potentiometer-1);
             }
@@ -399,10 +426,13 @@ void interfaceInit() {
     //cmd2LCD(0x01);
     analogReadRes(16);
 
-    interface.temp_parameter = 255;
+    Serial.println(sizeof(char));
+    Serial.println(sizeof(char *));
+    Serial.println(sizeof(uint8_t));
+    Serial.println(sizeof(uint8_t *));
+    interface.hold_parameter = 0;
     interface.page=iPatch;
 
-    Serial.println("Patch Codes: ");
     Serial.println(interfacePatchesInitSystem());
     interface.param_page = patchInfo.number;
     handleUserInput(interface.page);
@@ -418,4 +448,8 @@ void interfaceUpdate(){
     }
     readPotentiometers();
 
+}
+
+uint16_t interfaceGetPotValues(uint8_t input) {
+    return interface.pot_value[input];
 }

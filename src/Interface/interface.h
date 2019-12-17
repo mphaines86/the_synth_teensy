@@ -54,5 +54,6 @@ extern uint32_t cpSampleList[cpWaveCount];
 void interfaceInit();
 void interfaceUpdate();
 void interfaceUpdatePage();
+uint16_t interfaceGetPotValues(uint8_t input);
 
 #endif

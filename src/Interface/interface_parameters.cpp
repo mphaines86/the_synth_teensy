@@ -102,7 +102,7 @@ void interfaceParameterHandleUserInput(int8_t input, uint16_t pot_value, uint8_t
 
     uint8_t parameterNumber = interfaceParameters[paramPage][input].number;
 
-    static char dv[4] = {0};
+    static char dv[5] = {0};
     switch (interfaceParameters[paramPage][input].type) {
         case parameterNone:
             return;
@@ -150,7 +150,7 @@ void interfaceParameterUpdatePage(uint8_t paramPage) {
 
     cposition(0, 1);
     for (int i = 0; i < PARAMETER_PAGES / 2; ++i) {
-        static char dv[4] = {0};
+        static char dv[5] = {0};
         //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
         if (interfaceParameters[paramPage][i].type == parameterCont) {
             sprintf(dv, "%4d", cpParameterList[interfaceParameters[paramPage][i].number] >> 8);
@@ -173,7 +173,7 @@ void interfaceParameterUpdatePage(uint8_t paramPage) {
 
     cposition(0, 3);
     for (int i = PARAMETER_PAGES / 2; i < PARAMETER_PAGES; ++i) {
-        static char dv[4] = {0};
+        static char dv[5] = {0};
         //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
         if (interfaceParameters[paramPage][i].type == parameterCont) {
             sprintf(dv, "%4d", cpParameterList[interfaceParameters[paramPage][i].number] >> 8);

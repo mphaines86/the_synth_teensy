@@ -14,6 +14,8 @@
 #define PATCH_NAME_LENGTH 8
 
 struct patch_struct_t {
+    void setWriteProtect(uint8_t writeProtect);
+
     char * name[PATCH_NAME_LENGTH];
     uint8_t number;
     uint8_t writeProtect;
@@ -26,5 +28,7 @@ int8_t interfacePatchesInitPatch(uint8_t patch);
 int8_t interfacePatchesLoadPatch(uint8_t patch);
 int8_t interfacePatchesSavePatch(uint8_t patch);
 void interfacePatchesUpdatePage(uint8_t patch);
+void interfacePatchesSetWriteProtect(uint8_t value);
+int8_t interfacePatchesUpdateName(int8_t input);
 
 #endif //THE_SYNTH_TEENSY_INTERFACE_PATCHES_H
