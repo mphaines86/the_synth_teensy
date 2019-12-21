@@ -6,6 +6,7 @@
 #define MAX_WAVE_COUNT 16
 struct Voice {
 	const char * name; // 8 Characters + zero
+	uint32_t start_point;
     uint32_t end_length;
 	uint32_t loop_point;
 	int8_t pitch_from_C5;

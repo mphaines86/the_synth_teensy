@@ -49,7 +49,7 @@ int main(void) {
     pinMode(37, INPUT);
     pinMode(38, INPUT);
 
-
+    test_variable = 0;
     //analogRead(23)
     synth_begin();
 

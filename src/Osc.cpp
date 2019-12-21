@@ -53,6 +53,7 @@ void osc_setWaves(struct oscillator_struct * osc, struct Voice * set_voice,
 		osc->pitch[oscillator] = CVtoFrequancy(value);
 }*/
 
+
 void osc_setWave(struct oscillator_struct * osc, struct Voice * set_voice, byte oscillator){
 		osc->all_wavs[oscillator][osc->note] = set_voice;
 }
@@ -104,9 +105,8 @@ void osc_update(struct oscillator_struct *osc){
         }
         //else if (osc->direction[i] == -1 && (osc->phase_accumulator[i] <= 0 || osc->phase_accumulator[i] <= osc->all_wavs[i][osc->note]->loop_point))
         //    osc->phase_accumulator[i] = osc->all_wavs[i][osc->note]->end_length - osc->frequancy_tuning_word[i]; //osc->all_wavs[i][osc->note]->end_length;
-        osc->output[i] = (((127 - *(osc->all_wavs[i][osc->note]->wave +
-            ((osc->phase_accumulator[i]) >> 9))) * // * osc->oscillator_mix[i]) >> 8) *
-            osc->amplitude) >> 8);
+        osc->output[i] = (127 - *(osc->all_wavs[i][osc->note]->wave +
+            ((osc->phase_accumulator[i]) >> 9)));
 
         //output += ((osc->output[i] * osc->oscillator_mix[i]) >> 8);
 

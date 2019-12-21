@@ -6,11 +6,6 @@
 #include "interface_patches.h"
 #include "interface.h"
 #include "synth.h"
-#include "i2c_t3.h"
-
-#define EEPROM_PATCH_CHECK 42
-#define EEPROM_PATCH_DATA_SIZE EEPROM_DATA_BUFFER * 2
-
 
 
 struct patch_struct_t patchInfo = {
@@ -22,94 +17,9 @@ struct patch_struct_t patchInfo = {
 uint8_t data_buffer[EEPROM_PATCH_DATA_SIZE] = {0};
 uint8_t patch_name_edit_marker = 0;
 
-static int8_t readData(uint8_t i2c_addr, uint16_t addr, uint8_t *data, uint16_t size){
-    Wire.beginTransmission(i2c_addr);
-    Wire.write((uint8_t)(addr >> 8));
-    Wire.write((uint8_t)(addr & 0xFF));
-    //Wire.write((uint16_t)(0));
-    //Wire.write((uint16_t)(0));
 
-    switch(Wire.endTransmission()){
-        case 0:
-            break;
-        case 1:
-            Serial.println("Data too long");
-            return -1;
-        case 2:
-            Serial.println("recieved NACK on address");
-            return -2;
-        case 3:
-            Serial.println("recieved NACK on data");
-            return -3;
-        default:
-            return 0;
-    };
-
-    uint8_t data_needed = size;
-
-    if (size==0){
-        return 0;
-    }
-    else{
-        Wire.requestFrom(i2c_addr, (size_t) size);
-        while(Wire.available()){
-            *data++ = static_cast<uint8_t>(Wire.read());
-            --data_needed;
-        }
-        if (data_needed!=0){
-            Serial.println("Data not fully received");
-            return -1;
-        }
-        return 1;
-    }
-
-}
-static int8_t writeData(uint8_t i2c_addr, uint16_t addr, uint8_t *data, uint16_t size){
-
-    uint8_t * value = &data[0];
-
-    uint16_t data_size = size;
-
-    if(size==0){
-        return 0;
-    }
-    else {
-        while (data_size != 0) {
-            Wire.beginTransmission(i2c_addr);
-            Wire.write((uint8_t) (addr >> 8));
-            Wire.write((uint8_t) (addr & 0xFF));
-
-            uint16_t page_length = (data_size <= EEPROM_DATA_BUFFER) ? data_size : EEPROM_DATA_BUFFER;
-            for(uint8_t i=0; i<page_length; i++){
-                Wire.write(*value++);
-            }
-            addr += page_length;
-
-            switch(Wire.endTransmission()) {
-                case 0:
-                    break;
-                case 1:
-                    Serial.println("Data too long");
-                    return -1;
-                case 2:
-                    Serial.println("recieved NACK on address");
-                    return -2;
-                case 3:
-                    Serial.println("recieved NACK on data");
-                    return -3;
-                default:
-                    break;
-            };
-            _delay_us(10000);
-            data_size -= page_length;
-        }
-        return 1;
-    }
-}
 
 int8_t interfacePatchesInitSystem(){
-    Wire.begin(I2C_MASTER, 0x00, I2C_PINS_33_34, I2C_PULLUP_EXT, 400000);
-    Wire.setDefaultTimeout(250000);
 
     uint8_t patchNumber = 0;
 
@@ -198,7 +108,6 @@ int8_t interfacePatchesInitPatch(uint8_t patch){
 
     memcpy(&patchInfo.name[0], &name[0], PATCH_NAME_LENGTH*sizeof(char));
 
-
     return 1;
 }
 
@@ -225,12 +134,12 @@ int8_t interfacePatchesLoadPatch(uint8_t patch){
     uint8_t data_index = 9;
 
     for (uint16_t &i : cpParameterList) {
-        i = (data_buffer[data_index] << 8) | (data_buffer[data_index+1]);
+        i = (uint16_t) (data_buffer[data_index] << 8) | (data_buffer[data_index+1]);
         data_index+=2;
     }
-
     for (uint16_t &i : spParameterList) {
-        i = (data_buffer[data_index] << 8) | (data_buffer[data_index+1]);
+        i = (uint16_t) (data_buffer[data_index] << 8) | (data_buffer[data_index+1]);
+        Serial.println(i);
         data_index+=2;
     }
 
@@ -239,6 +148,8 @@ int8_t interfacePatchesLoadPatch(uint8_t patch){
     }
     Serial.print("PatchLoad: Loaded Patch ");
     Serial.println(patch);
+
+    parameterChange();
 
     return 1;
 }

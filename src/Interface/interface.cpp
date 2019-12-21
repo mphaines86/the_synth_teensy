@@ -226,7 +226,7 @@ static void handleUserInput(int8_t input){
 
             case iSample: {
                 NVIC_DISABLE_IRQ(IRQ_FTM1);
-                interfaceSampleHandleUserInput(input, interface.param_page, interface.pot_value);
+                interfaceSampleHandleUserInput(interface.pot_value[0] >> 14, input, interface.param_page, interface.pot_value);
 
                 parameterChange();
                 NVIC_ENABLE_IRQ(IRQ_FTM1);
@@ -249,9 +249,7 @@ void interfaceUpdatePage(){
                 interface.param_page = PARAMETER_PAGES -1;
 
             interface.param_page %= PARAMETER_PAGES;
-            Serial.println((char *) &patchInfo.name[0]);
             interfaceParameterUpdatePage(interface.param_page);
-            Serial.println((char *) &patchInfo.name[0]);
             break;
         }
         case iSample: {

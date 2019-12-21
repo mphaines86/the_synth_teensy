@@ -102,77 +102,137 @@ void interfaceSampleUpdatePage(uint8_t paramPage) {
     putsLCD(waveStruct[paramPage].name);
 
     cposition(0, 1);
-    const char *row2_param = "End Point:  ";
+    const char *row1_param = "Start: ";
+    putsLCD(row1_param);
+    sprintf(dv, "%8ld", waveStruct[paramPage].start_point>>9);
+    putsLCD(dv);
+
+    cposition(0, 2);
+    const char *row2_param = "End: ";
     putsLCD(row2_param);
     sprintf(dv, "%8ld", waveStruct[paramPage].end_length>>9);
     putsLCD(dv);
 
-    cposition(0, 2);
-    const char *row3_param = "Loop Point: ";
+    cposition(0, 3);
+    const char *row3_param = "Lp:";
     putsLCD(row3_param);
     sprintf(dv, "%8ld", waveStruct[paramPage].loop_point>>9);
     putsLCD(dv);
 
-    cposition(0, 3);
-    const char *row4_param = "Pitch from C5:  ";
+    //cposition(13, 3);
+    const char *row4_param = " PC5:";
     putsLCD(row4_param);
     sprintf(dv, "%4d", waveStruct[paramPage].pitch_from_C5);
     putsLCD(dv);
 }
 
-void interfaceSampleHandleUserInput(uint8_t input, uint8_t paramPage, uint16_t *pot_value) {
+void interfaceSampleHandleUserInput(uint8_t current_parameter, uint8_t input, uint8_t paramPage, uint16_t *pot_value) {
+
     input = -input - 1;
-    static char dp[9] = {0};
-    uint8_t x = pot_value[0] >> 8;
-    uint8_t y = pot_value[1] >> 8;
-    uint8_t z = pot_value[2] >> 8;
-    if (x > 250) x = 250;
-    if (y > 250) y = 250;
-    if (z > 250) z = 250;
-    uint32_t v = ((uint8_t) (x / 2.52)) * 10000 + ((uint8_t) (y / 2.52)) * 100 + ((uint8_t) (z / 2.52));
-
-    if (v > waveStruct[paramPage].max_length-1)
-        v = waveStruct[paramPage].max_length-1;
-    waveStruct[paramPage].end_length = v << 9;
-    cposition(12, 1);
-    sprintf(dp, "%8ld", v);
-    putsLCD(dp);
-
-
-    x = pot_value[3] >> 8;
-    y = pot_value[4] >> 8;
-    z = pot_value[5] >> 8;
-    if (x > 250) x = 250;
-    if (y > 250) y = 250;
-    if (z > 250) z = 250;
-    v = ((uint8_t) (x / 2.52)) * 10000 + ((uint8_t) (y / 2.52)) * 100 + ((uint8_t) (z / 2.52));
-    if (v > waveStruct[paramPage].end_length >> 9) v = waveStruct[paramPage].end_length >> 9;
-    waveStruct[paramPage].loop_point= v << 9;
-    cposition(12, 2);
-    sprintf(dp, "%8ld", v);
-    putsLCD(dp);
-
-    auto u= (int8_t) ((pot_value[6] >> 9) - 63);
-    waveStruct[paramPage].pitch_from_C5=u;
-    cposition(16, 3);
-    sprintf(dp, "%4d", u);
-    putsLCD(dp);
-    Serial.print(waveStruct[paramPage].end_length);
-    Serial.print(", ");
-    Serial.println(waveStruct[paramPage].loop_point);
-
-    cposition(15, 0);
-    if (input > 2){
-        u = *(waveStruct[paramPage].wave + (waveStruct[paramPage].loop_point >> 9)) -127;
-        //v = *(waveStruct[interface.param_page].wave + 51);
-        //v = waveStruct[interface.param_page].wave[54];
-        sprintf(dp, "%4d", u);
-        putsLCD(dp);
+    if(input == 0) {
+        switch (current_parameter) {
+            case 0: {
+                cposition(7, 1);
+                break;
+            }
+            case 1: {
+                cposition(5, 2);
+                break;
+            }
+            case 2: {
+                cposition(4, 3);
+                break;
+            }
+            case 3: {
+                cposition(16, 3);
+                break;
+            }
+            default:
+                break;
+        }
     }
-    if (input < 3){
-        u = *(waveStruct[paramPage].wave + (waveStruct[paramPage].end_length >> 9)) -127;
-        sprintf(dp, "%4d", u);
-        putsLCD(dp);
+    else {
+
+        static char dp[9] = {0};
+        uint32_t v = 0;
+
+        if (current_parameter < 3) {
+            uint8_t x = pot_value[1] >> 8;
+            uint8_t y = pot_value[2] >> 8;
+            uint8_t z = pot_value[3] >> 8;
+            if (x > 250) x = 250;
+            if (y > 250) y = 250;
+            if (z > 250) z = 250;
+            v = ((uint8_t) (x / 2.52)) * 10000 + ((uint8_t) (y / 2.52)) * 100 + ((uint8_t) (z / 2.52));
+
+            //if (v > waveStruct[paramPage].max_length - 1)
+            //    v = waveStruct[paramPage].max_length - 1;
+        }
+
+
+        switch (current_parameter) {
+            case 0: {
+                if (v > waveStruct[paramPage].end_length >> 9) v = waveStruct[paramPage].end_length >> 9;
+                waveStruct[paramPage].start_point = v << 9;
+                cposition(7, 1);
+                sprintf(dp, "%8ld", v);
+                putsLCD(dp);
+
+                auto u = (int8_t) (*(waveStruct[paramPage].wave + (waveStruct[paramPage].start_point >> 9)) - 127);
+                cposition(15, 0);
+                sprintf(dp, "%4d", u);
+                putsLCD(dp);
+                break;
+            }
+            case 1: {
+                if (v > waveStruct[paramPage].max_length - 1)
+                    v = waveStruct[paramPage].max_length - 1;
+                waveStruct[paramPage].end_length = v << 9;
+                cposition(5, 2);
+                sprintf(dp, "%8ld", v);
+                putsLCD(dp);
+
+                auto u = (int8_t) (*(waveStruct[paramPage].wave + (waveStruct[paramPage].end_length >> 9)) - 127);
+                cposition(15, 0);
+                sprintf(dp, "%4d", u);
+                putsLCD(dp);
+                break;
+            }
+            case 2: {
+                if (v > waveStruct[paramPage].end_length >> 9) v = waveStruct[paramPage].end_length >> 9;
+                waveStruct[paramPage].loop_point = v << 9;
+                cposition(3, 3);
+                sprintf(dp, "%8ld", v);
+                putsLCD(dp);
+
+                auto u = (int8_t) (*(waveStruct[paramPage].wave + (waveStruct[paramPage].loop_point >> 9)) - 127);
+                cposition(15, 0);
+                sprintf(dp, "%4d", u);
+                putsLCD(dp);
+                break;
+            }
+            case 3: {
+                auto u = (int8_t) ((pot_value[1] >> 9) - 63);
+                waveStruct[paramPage].pitch_from_C5 = u;
+                cposition(16, 3);
+                sprintf(dp, "%4d", u);
+                putsLCD(dp);
+                break;
+            }
+            default:
+                break;
+        }
+
+
+        if (waveStruct[paramPage].loop_point > waveStruct[paramPage].end_length)
+            waveStruct[paramPage].loop_point = waveStruct[paramPage].end_length;
+        if (waveStruct[paramPage].start_point > waveStruct[paramPage].end_length)
+            waveStruct[paramPage].start_point = waveStruct[paramPage].end_length;
+        //Serial.print(waveStruct[paramPage].end_length);
+        //Serial.print(", ");
+        //Serial.println(waveStruct[paramPage].loop_point);
+
+
     }
 }
 
