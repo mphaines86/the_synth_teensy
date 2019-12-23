@@ -8,7 +8,7 @@
 #include <cstdint>
 
 #define EEPROM_SIZE 32000
-#define EEPROM_RESERVED 3200
+#define EEPROM_RESERVED 1280
 #define EEPROM_DATA_BUFFER 64
 
 void EEPROMinit();

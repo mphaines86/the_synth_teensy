@@ -38,11 +38,11 @@ extern volatile uint16_t filter_total;
 //  Audio driver interrupt
 //*********************************************************************************************
 
-void synth_begin();
-void interfaceCheck();
+void synthBegin();
 void note_trigger(byte given_pitch, byte velocity);
 void NoteRelease(byte given_pitch);
-void parameterChange();
+void synthParameterChange();
+void synthWaveChange(uint8_t wave, uint8_t voice, uint8_t oscillator, uint8_t lowNote, uint8_t highNote);
 
 void set_envelopes();
 void set_oscillators();

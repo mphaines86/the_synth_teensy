@@ -16,7 +16,7 @@ uint16_t CVtoFrequancy(uint32_t cv){
 	return (pre_pitching>>(10 - octave));
 }
 
-void osc_trigger(struct oscillator_struct * osc, uint16_t pitch[NUMBER_OF_OSCILLATORS], byte note,
+void osc_trigger(struct oscillator_struct * osc, uint16_t pitch[NUMBER_OF_OSCILLATORS], uint8_t note,
 	uint8_t osc_amp[NUMBER_OF_OSCILLATORS]){
 
 		osc->note = note;
@@ -27,7 +27,7 @@ void osc_trigger(struct oscillator_struct * osc, uint16_t pitch[NUMBER_OF_OSCILL
             osc->oscillator_mix[i] = osc_amp[i];
             osc->cv_pitch[i] = (pitch[i] + osc->all_wavs[i][osc->note]->pitch_from_C5) * 240;
             osc->pitch[i] = CVtoFrequancy(pitch[i]);
-            osc->phase_accumulator[i]= 0;
+            osc->phase_accumulator[i]= osc->all_wavs[i][osc->note]->start_point;
 		}
 		//test_variable = osc->cv_pitch[0];
 
@@ -40,8 +40,8 @@ void osc_setParameters(struct oscillator_struct *osc, oscSyncMode_t sync, uint16
     osc->oscillator_mix[1] = oscBmix;
 }
 
-void osc_setWaves(struct oscillator_struct * osc, struct Voice * set_voice,
-	byte lowest_note, byte highest_note, byte oscillator){
+void osc_setWaves(struct oscillator_struct *osc, struct Voice *set_voice,
+                  uint8_t lowest_note, uint8_t highest_note, uint8_t oscillator){
 	uint8_t current_note;
 
 	for(current_note = lowest_note; current_note<=highest_note;current_note++){
@@ -49,12 +49,8 @@ void osc_setWaves(struct oscillator_struct * osc, struct Voice * set_voice,
 	}
 }
 
-/*void osc_setPitch(struct oscillator_struct * osc, uint16_t value, byte oscillator){
-		osc->pitch[oscillator] = CVtoFrequancy(value);
-}*/
 
-
-void osc_setWave(struct oscillator_struct * osc, struct Voice * set_voice, byte oscillator){
+void osc_setWave(struct oscillator_struct *osc, struct Voice *set_voice, uint8_t oscillator){
 		osc->all_wavs[oscillator][osc->note] = set_voice;
 }
 
@@ -63,23 +59,16 @@ void osc_setSync(struct oscillator_struct * osc, oscSyncMode_t sync){
 	osc->sync = sync;
 }
 
-/*void osc_setAmplitude(struct oscillator_struct * osc, uint16_t amplitude){
-	osc->amplitude = amplitude;
-}*/
-
 void osc_updateFrequancyTuningWord(struct oscillator_struct * osc){
 	int i;
 	for(i = 0; i < NUMBER_OF_OSCILLATORS; i ++){
 		osc->frequancy_tuning_word[i] = osc->pitch[i];
 	}
 }
-/* inline int16_t osc_getOutput(struct oscillator_struct * osc){
-	return osc->output_sum;
-}*/
 
 void osc_update(struct oscillator_struct *osc){
 
-    int16_t output = 0;
+    // int16_t output = 0;
     for(uint8_t i = 0; i < NUMBER_OF_OSCILLATORS; i ++){
         osc->phase_accumulator[i] += osc->direction[i] * osc->frequancy_tuning_word[i];
 
@@ -112,5 +101,4 @@ void osc_update(struct oscillator_struct *osc){
 
     }
     //osc->output_sum = output;
-    osc->output_sum = output;
 }

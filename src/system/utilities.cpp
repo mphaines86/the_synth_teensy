@@ -1,4 +1,4 @@
-// LCD MODULES void cmd2LCD(char cmd)
+// LCD MODULES void lcdCmd(char cmd)
 
 #include <cstdint>
 

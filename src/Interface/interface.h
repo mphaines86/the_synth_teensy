@@ -55,5 +55,6 @@ void interfaceInit();
 void interfaceUpdate();
 void interfaceUpdatePage();
 uint16_t interfaceGetPotValues(uint8_t input);
+void interfaceUpdateNoteList(int8_t note, uint8_t state);
 
 #endif

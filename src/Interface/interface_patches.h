@@ -8,15 +8,15 @@
 #include <stdint.h>
 #include "system/EEPROM.h"
 
-#define EEPROM_PATCH_CHECK 42
-#define EEPROM_PATCH_DATA_SIZE EEPROM_DATA_BUFFER * 2
+#define EEPROM_PATCH_CHECK 43
+#define EEPROM_PATCH_DATA_SIZE EEPROM_DATA_BUFFER * 3
 #define EEPROM_NUM_OF_PATCHES (EEPROM_SIZE - EEPROM_RESERVED)/EEPROM_PATCH_DATA_SIZE
-#define PATCH_NAME_LENGTH 8
+#define EEPROM_PATCH_NAME_LENGTH 8
 
 struct patch_struct_t {
     void setWriteProtect(uint8_t writeProtect);
 
-    char * name[PATCH_NAME_LENGTH];
+    char * name[EEPROM_PATCH_NAME_LENGTH];
     uint8_t number;
     uint8_t writeProtect;
 };

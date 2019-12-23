@@ -10,11 +10,11 @@
 uint8_t interfaceSampleFindZeroPoint(uint8_t page, uint8_t paramPage){
     NVIC_DISABLE_IRQ(IRQ_FTM1);
     if (page == 3){
-        cmd2LCD(0x01);
+        lcdCmd(0x01);
         delay(2);
-        cposition(0, 0);
+        lcdChangePos(0, 0);
         const char *message = "Finding End Point  Zero Point...";
-        putsLCD(message);
+        lcdSendCharArray(message);
         uint32_t start_sample_loc = waveStruct[paramPage].end_length >> 9;
         int8_t sample = *(waveStruct[paramPage].wave + start_sample_loc) - 127;
         uint8_t sign_bit = 0;
@@ -51,11 +51,11 @@ uint8_t interfaceSampleFindZeroPoint(uint8_t page, uint8_t paramPage){
     }
 
     else if (page == 4){
-        cmd2LCD(0x01);
+        lcdCmd(0x01);
         delay(2);
-        cposition(0, 0);
+        lcdChangePos(0, 0);
         const char *message = "Finding Loop Point  Zero Point...";
-        putsLCD(message);
+        lcdSendCharArray(message);
         uint32_t start_sample_loc = waveStruct[paramPage].loop_point >> 9;
         int8_t sample = *(waveStruct[paramPage].wave + start_sample_loc) - 127;
         uint8_t sign_bit = 0;
@@ -95,35 +95,35 @@ uint8_t interfaceSampleFindZeroPoint(uint8_t page, uint8_t paramPage){
 }
 
 void interfaceSampleUpdatePage(uint8_t paramPage) {
-    cmd2LCD(0x01);
+    lcdCmd(0x01);
     delay(2);
     static char dv[9] = {0};
-    cposition(0, 0);
-    putsLCD(waveStruct[paramPage].name);
+    lcdChangePos(0, 0);
+    lcdSendCharArray(waveStruct[paramPage].name);
 
-    cposition(0, 1);
+    lcdChangePos(0, 1);
     const char *row1_param = "Start: ";
-    putsLCD(row1_param);
+    lcdSendCharArray(row1_param);
     sprintf(dv, "%8ld", waveStruct[paramPage].start_point>>9);
-    putsLCD(dv);
+    lcdSendCharArray(dv);
 
-    cposition(0, 2);
+    lcdChangePos(0, 2);
     const char *row2_param = "End: ";
-    putsLCD(row2_param);
+    lcdSendCharArray(row2_param);
     sprintf(dv, "%8ld", waveStruct[paramPage].end_length>>9);
-    putsLCD(dv);
+    lcdSendCharArray(dv);
 
-    cposition(0, 3);
+    lcdChangePos(0, 3);
     const char *row3_param = "Lp:";
-    putsLCD(row3_param);
+    lcdSendCharArray(row3_param);
     sprintf(dv, "%8ld", waveStruct[paramPage].loop_point>>9);
-    putsLCD(dv);
+    lcdSendCharArray(dv);
 
-    //cposition(13, 3);
+    //lcdChangePos(13, 3);
     const char *row4_param = " PC5:";
-    putsLCD(row4_param);
+    lcdSendCharArray(row4_param);
     sprintf(dv, "%4d", waveStruct[paramPage].pitch_from_C5);
-    putsLCD(dv);
+    lcdSendCharArray(dv);
 }
 
 void interfaceSampleHandleUserInput(uint8_t current_parameter, uint8_t input, uint8_t paramPage, uint16_t *pot_value) {
@@ -132,19 +132,19 @@ void interfaceSampleHandleUserInput(uint8_t current_parameter, uint8_t input, ui
     if(input == 0) {
         switch (current_parameter) {
             case 0: {
-                cposition(7, 1);
+                lcdChangePos(7, 1);
                 break;
             }
             case 1: {
-                cposition(5, 2);
+                lcdChangePos(5, 2);
                 break;
             }
             case 2: {
-                cposition(4, 3);
+                lcdChangePos(4, 3);
                 break;
             }
             case 3: {
-                cposition(16, 3);
+                lcdChangePos(16, 3);
                 break;
             }
             default:
@@ -174,49 +174,49 @@ void interfaceSampleHandleUserInput(uint8_t current_parameter, uint8_t input, ui
             case 0: {
                 if (v > waveStruct[paramPage].end_length >> 9) v = waveStruct[paramPage].end_length >> 9;
                 waveStruct[paramPage].start_point = v << 9;
-                cposition(7, 1);
+                lcdChangePos(7, 1);
                 sprintf(dp, "%8ld", v);
-                putsLCD(dp);
+                lcdSendCharArray(dp);
 
                 auto u = (int8_t) (*(waveStruct[paramPage].wave + (waveStruct[paramPage].start_point >> 9)) - 127);
-                cposition(15, 0);
+                lcdChangePos(15, 0);
                 sprintf(dp, "%4d", u);
-                putsLCD(dp);
+                lcdSendCharArray(dp);
                 break;
             }
             case 1: {
                 if (v > waveStruct[paramPage].max_length - 1)
                     v = waveStruct[paramPage].max_length - 1;
                 waveStruct[paramPage].end_length = v << 9;
-                cposition(5, 2);
+                lcdChangePos(5, 2);
                 sprintf(dp, "%8ld", v);
-                putsLCD(dp);
+                lcdSendCharArray(dp);
 
                 auto u = (int8_t) (*(waveStruct[paramPage].wave + (waveStruct[paramPage].end_length >> 9)) - 127);
-                cposition(15, 0);
+                lcdChangePos(15, 0);
                 sprintf(dp, "%4d", u);
-                putsLCD(dp);
+                lcdSendCharArray(dp);
                 break;
             }
             case 2: {
                 if (v > waveStruct[paramPage].end_length >> 9) v = waveStruct[paramPage].end_length >> 9;
                 waveStruct[paramPage].loop_point = v << 9;
-                cposition(3, 3);
+                lcdChangePos(3, 3);
                 sprintf(dp, "%8ld", v);
-                putsLCD(dp);
+                lcdSendCharArray(dp);
 
                 auto u = (int8_t) (*(waveStruct[paramPage].wave + (waveStruct[paramPage].loop_point >> 9)) - 127);
-                cposition(15, 0);
+                lcdChangePos(15, 0);
                 sprintf(dp, "%4d", u);
-                putsLCD(dp);
+                lcdSendCharArray(dp);
                 break;
             }
             case 3: {
                 auto u = (int8_t) ((pot_value[1] >> 9) - 63);
                 waveStruct[paramPage].pitch_from_C5 = u;
-                cposition(16, 3);
+                lcdChangePos(16, 3);
                 sprintf(dp, "%4d", u);
-                putsLCD(dp);
+                lcdSendCharArray(dp);
                 break;
             }
             default:

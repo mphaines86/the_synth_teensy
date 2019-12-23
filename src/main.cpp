@@ -1,8 +1,11 @@
 
+#include <Interface/interface.h>
 #include "main.h"
 #include "Arduino.h"
 #include "synth.h"
 #include "system/i2c_t3.h"
+#include "midi_l.h"
+
 int current_notes = 0;
 byte pitch_bend_channel[] = {0, 0, 0, 0, 0, 0, 0, 0,};
 
@@ -51,12 +54,21 @@ int main(void) {
 
     test_variable = 0;
     //analogRead(23)
-    synth_begin();
+    synthBegin();
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
     while(true){
-        interfaceCheck();
+        if(!(tik%8000)) {
+            //test_variable++;
+            //Serial.println(test_variable);
+            //static char dv[10] = {0};
+            //sprintf(dv,"%8d",test_variable);
+            //lcdChangePos(0, 2);
+            //lcdSendCharArray(dv);
+        }
+        midi_read();
+        interfaceUpdate();
     }
 #pragma clang diagnostic pop
 

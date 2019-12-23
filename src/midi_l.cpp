@@ -104,7 +104,7 @@ void handleControlChange(byte channel, byte number, byte value){
     }
 
     if(change){
-        parameterChange();
+        synthParameterChange();
     }
 
 

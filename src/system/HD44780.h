@@ -12,13 +12,13 @@
 #include <Arduino.h>
 
 
-void cmd2LCD(char cmd);   // Send command to the screen
-void openLCD(void);      // send commands to setup the screen 4 bit, etc
-void putcLCD(char cx);    // send char to the lcd
-void putsLCD(const char *ptr);  // send full string to lcd
-void clearscreen(void);   // send command to clear the screen of characters
-void clearline(int line);   // send command to clear a specific  line.
-void cposition(int x, int y);  // set position of curser (x,y) positions starting at 0,1
-void CChar(int *character, int ccram);
+void lcdCmd(char cmd);   // Send command to the screen
+void lcdOpen(void);      // send commands to setup the screen 4 bit, etc
+void lcdSendChar(char cx);    // send char to the lcd
+void lcdSendCharArray(const char *ptr);  // send full string to lcd
+void lcdClearScreen(void);   // send command to clear the screen of characters
+void lcdClearline(int line);   // send command to clear a specific  line.
+void lcdChangePos(int x, int y);  // set position of curser (x,y) positions starting at 0,1
+void lcdCustomChar(int *character, int ccram);
 
 #endif /* HD44780_H_ */

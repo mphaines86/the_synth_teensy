@@ -7,6 +7,7 @@
 #include "interface_sample.h"
 #include "interface_parameters.h"
 #include "interface_patches.h"
+#include "interface_layout.h"
 
 #define TIME_BUFFER 100
 #define DEBOUNCE_MAX 20
@@ -68,9 +69,8 @@ static struct {
 
 
 enum interfacePage_e {
-    iLeft=0, iRight, iParam, iSample, iLayout, iMatrix, iSettings, iPatch
+    iLeft = 0, iRight, iParam, iSample, iLayout, iMatrix, iSettings, iPatch
 };
-
 
 
 static int uint16Compare(const void * a,const void * b)
@@ -83,13 +83,9 @@ static int uint16Compare(const void * a,const void * b)
 		return 1;
 }
 
-static uint32_t debounce(uint8_t port, uint8_t button){
+/*static uint32_t debounce(uint8_t port, uint8_t button){
 
-    uint32_t output = 0;
-    //test_variable = (GPIOC_PDIR&(1<<port));
-
-    output = (GPIOC_PDIR&(1<<port))>>10;
-    /*if (!(GPIOC_PDIR&(1<<port))){
+    if (!(GPIOC_PDIR&(1<<port))){
         if (interface.integrator[button] > 0)
             interface.integrator[button]--;
     }
@@ -101,10 +97,10 @@ static uint32_t debounce(uint8_t port, uint8_t button){
     else if (interface.integrator[button] >= DEBOUNCE_MAX){
         output = 1;
         interface.integrator[button] = DEBOUNCE_MAX;
-    }*/
+    }
 
     return output;
-}
+}*/
 
 static void handleUserInput(int8_t input){
 
@@ -121,6 +117,7 @@ static void handleUserInput(int8_t input){
                     interfaceUpdatePage();
                 }
                 break;
+            default:break;
         }
         return;
     }
@@ -142,30 +139,14 @@ static void handleUserInput(int8_t input){
 
         switch (interface.page) {
             case iParam:
-                switch (input){
-                    case iSample:{
-                        interfacePatchesSavePatch(patchInfo.number);
-                        return;
-                    }
-                    case iLayout:{
-                        interfacePatchesInitPatch(patchInfo.number);
-                        //interfacePatchesSetWriteProtect(static_cast<uint8_t>(!patchInfo.writeProtect));
-                        interfaceUpdatePage();
-                        return;
-                    }
-                    case iMatrix:{
-                        interface.hold_parameter = 1;
-                        interfacePatchesUpdateName(10);
-                        return;
-                    }
-                }
+                interface.hold_parameter = interfaceParameterHandleUserInput(input, NULL, interface.param_page);
             case iSample: {
                 if (!interfaceSampleFindZeroPoint(input, interface.param_page)) {
                     return;
                 }
 
                 delay(2);
-                parameterChange();
+                synthParameterChange();
                 interfaceUpdatePage();
                 return;
             }
@@ -216,11 +197,8 @@ static void handleUserInput(int8_t input){
     else if(input<iLeft){
         switch (interface.page) {
             case iParam: {
-                input = -input - 1;
-
                 interfaceParameterHandleUserInput(input, interface.pot_value[input], interface.param_page);
-
-                parameterChange();
+                synthParameterChange();
                 break;
             }
 
@@ -228,7 +206,7 @@ static void handleUserInput(int8_t input){
                 NVIC_DISABLE_IRQ(IRQ_FTM1);
                 interfaceSampleHandleUserInput(interface.pot_value[0] >> 14, input, interface.param_page, interface.pot_value);
 
-                parameterChange();
+                synthParameterChange();
                 NVIC_ENABLE_IRQ(IRQ_FTM1);
 
                 break;
@@ -260,15 +238,15 @@ void interfaceUpdatePage(){
             break;
         }
         case iLayout:
-            cmd2LCD(0x01);
+            lcdCmd(0x01);
             delay(2);
             static char dv[9] = {0};
-            cposition(0, 0);
+            lcdChangePos(0, 0);
 
             if(interface.param_page < 2){
                 const char *row1 = "Sample: ";
-                putsLCD(row1);
-                putsLCD(waveStruct[interface.param_page].name);
+                lcdSendCharArray(row1);
+                lcdSendCharArray(waveStruct[interface.param_page].name);
             }
             break;
         case iPatch:{
@@ -286,7 +264,11 @@ void interfaceUpdatePage(){
 
 static void readButton(){
 
-    uint32_t output = debounce(10, interface.increament_button);
+    uint32_t output = 0;
+    //test_variable = (GPIOC_PDIR&(1<<port));
+
+    output = (GPIOC_PDIR&(1<<10))>>10;
+    //uint32_t output = debounce(10, interface.increament_button);
     //uint8_t output = (uint8_t)(GPIOC_PDIR&(1<<10))>>10;
     if(output == 1){
         //test_variable = tik - interface.lastButtonPress;
@@ -309,17 +291,7 @@ static void readButton(){
 
             } else if (interface.increament_button > 1) {
                 //Serial.println(interface.page);
-                if (interface.page == iPatch) {
-                    //Serial.println("Patch");
-                    handleUserInput(interface.increament_button);
-                }
-                //else if (interface.increament_button == 2){
-                //    interface.page = iPatch;
-                //    handleUserInput(interface.page);
-                //}
-                else{
-                    handleUserInput(interface.increament_button);
-                }
+                handleUserInput(interface.increament_button);
             }
             updatePage = 1;
         }
@@ -412,16 +384,16 @@ void interfaceInit() {
     }*/
     interface.lastButtonPress = 0;
 
-    openLCD();
+    lcdOpen();
     delay(200);
     const char *msg1="mphaines88/Roykeru";
-    putsLCD(msg1);
-    cposition(0,2);
+    lcdSendCharArray(msg1);
+    lcdChangePos(0, 2);
     delay(2);
     const char *msg2="SX8 Synthesizer";
-    putsLCD(msg2);
+    lcdSendCharArray(msg2);
     delay(2000);
-    //cmd2LCD(0x01);
+    //lcdCmd(0x01);
     analogReadRes(16);
 
     Serial.println(sizeof(char));
@@ -439,8 +411,9 @@ void interfaceInit() {
 
 }
 
+
 void interfaceUpdate(){
-    if (updatePage & !analogBusy){
+     if (updatePage & !analogBusy){
         //interfaceUpdatePage();
         //updatePage = 0;
     }
@@ -450,4 +423,17 @@ void interfaceUpdate(){
 
 uint16_t interfaceGetPotValues(uint8_t input) {
     return interface.pot_value[input];
+}
+
+void interfaceUpdateNoteList(int8_t note, uint8_t state){
+    if (interface.page == iPatch){
+        lcdChangePos(note, 3);
+        if(state){
+            lcdSendChar(static_cast<char>(0xFF));
+        }
+        else{
+            lcdSendChar(static_cast<char>(0b10100000));
+        }
+
+    }
 }

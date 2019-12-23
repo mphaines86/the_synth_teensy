@@ -73,7 +73,7 @@ int8_t interfacePatchesInitPatch(uint8_t patch){
 
     const char *name= "InitPtch";
 
-    uint8_t data_index=PATCH_NAME_LENGTH+2;
+    uint8_t data_index=EEPROM_PATCH_NAME_LENGTH+2;
 
     for (uint16_t i : cpParameterList) {
         data_buffer[data_index] = (uint8_t) (i >> 8);
@@ -96,17 +96,17 @@ int8_t interfacePatchesInitPatch(uint8_t patch){
     const char *value = &name[0];
 
     data_buffer[0] = EEPROM_PATCH_CHECK;
-    for(uint8_t i=1; i<PATCH_NAME_LENGTH+1; i++){
+    for(uint8_t i=1; i<EEPROM_PATCH_NAME_LENGTH+1; i++){
         data_buffer[i] = (uint8_t)*value++;
     }
 
-    data_buffer[PATCH_NAME_LENGTH+1] = 0;
+    data_buffer[EEPROM_PATCH_NAME_LENGTH+1] = 0;
 
     if(writeData(80, patch*EEPROM_PATCH_DATA_SIZE+1, data_buffer, EEPROM_PATCH_DATA_SIZE)!=1){
         return -1;
     }
 
-    memcpy(&patchInfo.name[0], &name[0], PATCH_NAME_LENGTH*sizeof(char));
+    memcpy(&patchInfo.name[0], &name[0], EEPROM_PATCH_NAME_LENGTH*sizeof(char));
 
     return 1;
 }
@@ -130,7 +130,7 @@ int8_t interfacePatchesLoadPatch(uint8_t patch){
     if(readData(80, patchAddress+1, data_buffer, EEPROM_PATCH_DATA_SIZE) != 1)
         return -1;
 
-    memcpy(&patchInfo.name[0], (char *) &data_buffer[0], PATCH_NAME_LENGTH*sizeof(char));
+    memcpy(&patchInfo.name[0], (char *) &data_buffer[0], EEPROM_PATCH_NAME_LENGTH*sizeof(char));
     uint8_t data_index = 9;
 
     for (uint16_t &i : cpParameterList) {
@@ -149,18 +149,18 @@ int8_t interfacePatchesLoadPatch(uint8_t patch){
     Serial.print("PatchLoad: Loaded Patch ");
     Serial.println(patch);
 
-    parameterChange();
+    synthParameterChange();
 
     return 1;
 }
 
 int8_t interfacePatchesSavePatch(uint8_t patch){
     if(patchInfo.writeProtect){
-        cmd2LCD(0x01);
+        lcdCmd(0x01);
         delay(2);
-        cposition(0,0);
+        lcdChangePos(0, 0);
         const char *row1 = "Patch Write Protected!";
-        putsLCD(row1);
+        lcdSendCharArray(row1);
         delay(3000);
 
         return 0;
@@ -168,7 +168,7 @@ int8_t interfacePatchesSavePatch(uint8_t patch){
 
     const char *name= "InitPtch";
 
-    uint8_t data_index=PATCH_NAME_LENGTH+2;
+    uint8_t data_index=EEPROM_PATCH_NAME_LENGTH+2;
 
     for (uint16_t i : cpParameterList) {
         data_buffer[data_index] = (uint8_t) (i >> 8);
@@ -189,13 +189,13 @@ int8_t interfacePatchesSavePatch(uint8_t patch){
     }
 
     const char *value = patchInfo.name[0];
-    memcpy(&data_buffer[1], (uint8_t *) &patchInfo.name[0], PATCH_NAME_LENGTH*sizeof(uint8_t));
+    memcpy(&data_buffer[1], (uint8_t *) &patchInfo.name[0], EEPROM_PATCH_NAME_LENGTH*sizeof(uint8_t));
     data_buffer[0] = EEPROM_PATCH_CHECK;
-    //for(uint8_t i=1; i<PATCH_NAME_LENGTH+1; i++){
-        //memcpy(&data_buffer[i], &patchInfo.name[i-1], PATCH_NAME_LENGTH*sizeof(uint8_t));
+    //for(uint8_t i=1; i<EEPROM_PATCH_NAME_LENGTH+1; i++){
+        //memcpy(&data_buffer[i], &patchInfo.name[i-1], EEPROM_PATCH_NAME_LENGTH*sizeof(uint8_t));
         //data_buffer[i] = (uint8_t) *(*(patchInfo.name+i));
     //}
-    data_buffer[PATCH_NAME_LENGTH+1] = patchInfo.writeProtect;
+    data_buffer[EEPROM_PATCH_NAME_LENGTH+1] = patchInfo.writeProtect;
 
     if(writeData(80, patch*EEPROM_PATCH_DATA_SIZE+1, data_buffer, EEPROM_PATCH_DATA_SIZE)!=1){
         Serial.println("PatchSave: Failed to save patch");
@@ -214,28 +214,28 @@ void interfacePatchesUpdatePage(uint8_t patch) {
         interfacePatchesLoadPatch(patch);
     }
 
-    cmd2LCD(0x01);
+    lcdCmd(0x01);
     delay(2);
 
     Serial.println((char *) &patchInfo.name[0]);
 
     static char dv[4] = {0};
-    cposition(0, 0);
+    lcdChangePos(0, 0);
     sprintf(dv, "%3d:", patchInfo.number);
-    putsLCD(dv);
-    putsLCD((char *) patchInfo.name);
+    lcdSendCharArray(dv);
+    lcdSendCharArray((char *) patchInfo.name);
 }
 
 void interfacePatchesSetWriteProtect(uint8_t value){
 
-    cmd2LCD(0x01);
+    lcdCmd(0x01);
     delay(2);
-    cposition(0,0);
+    lcdChangePos(0, 0);
     const char *row1 = "Write Protect Set";
-    putsLCD(row1);
+    lcdSendCharArray(row1);
 
     patchInfo.writeProtect = value;
-    writeData(80, patchInfo.number*EEPROM_PATCH_DATA_SIZE + PATCH_NAME_LENGTH + 1, &patchInfo.writeProtect, 1);
+    writeData(80, patchInfo.number*EEPROM_PATCH_DATA_SIZE + EEPROM_PATCH_NAME_LENGTH + 1, &patchInfo.writeProtect, 1);
 
     delay(3000);
 
@@ -246,15 +246,15 @@ int8_t interfacePatchesUpdateName(int8_t input){
     char character;
 
     if (input == 10){
-        cmd2LCD(0x01);
+        lcdCmd(0x01);
         delay(2);
-        cposition(0,0);
+        lcdChangePos(0, 0);
         const char *row1 = "Patch Name:";
-        putsLCD(row1);
-        for(uint8_t i=0; i<PATCH_NAME_LENGTH; i++) {
+        lcdSendCharArray(row1);
+        for(uint8_t i=0; i<EEPROM_PATCH_NAME_LENGTH; i++) {
             character = static_cast<char>(255 / 224 * (interfaceGetPotValues(i) >> 8) + 32);
-            cposition(i,1);
-            putcLCD(character);
+            lcdChangePos(i, 1);
+            lcdSendChar(character);
             //patchInfo.name[i] = reinterpret_cast<char *>(character);
             //*(patchInfo.name + i) = (char *) character;
         }
@@ -262,11 +262,11 @@ int8_t interfacePatchesUpdateName(int8_t input){
     }
 
     if (input==1){
-        unsigned char buffer[PATCH_NAME_LENGTH] = {0};
-        for(uint8_t i=0; i < PATCH_NAME_LENGTH; i++){
+        unsigned char buffer[EEPROM_PATCH_NAME_LENGTH] = {0};
+        for(uint8_t i=0; i < EEPROM_PATCH_NAME_LENGTH; i++){
             buffer[i] = static_cast<unsigned char>(255 / 224 * (interfaceGetPotValues(i) >> 8) + 32);
         }
-        memcpy(&patchInfo.name[0], (char *) &buffer[0], PATCH_NAME_LENGTH*sizeof(char));
+        memcpy(&patchInfo.name[0], (char *) &buffer[0], EEPROM_PATCH_NAME_LENGTH*sizeof(char));
         //patch_name_edit_marker=0;
         return 1;
     }
@@ -275,8 +275,8 @@ int8_t interfacePatchesUpdateName(int8_t input){
     character = static_cast<char>(255/224 * (interfaceGetPotValues(input) >> 8) + 32);
     //patchInfo.name[input] = reinterpret_cast<char *>(character);
 
-    cposition(input,1);
-    putcLCD(character);
+    lcdChangePos(input, 1);
+    lcdSendChar(character);
     //Serial.println(character);
     return 0;
 

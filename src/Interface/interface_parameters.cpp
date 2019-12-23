@@ -6,6 +6,7 @@
 #include <system/HD44780.h>
 #include "interface_parameters.h"
 #include "interface.h"
+#include "interface_patches.h"
 
 struct interfaceParam_s{
     interfaceParamType_e type;
@@ -98,98 +99,138 @@ const struct interfaceParam_s interfaceParameters[PARAMETER_PAGES][8] = {
         },
 };
 
-void interfaceParameterHandleUserInput(int8_t input, uint16_t pot_value, uint8_t paramPage) {
+uint8_t interfaceParameterHandleUserInput(int8_t input, uint16_t pot_value, uint8_t paramPage) {
 
-    uint8_t parameterNumber = interfaceParameters[paramPage][input].number;
 
-    static char dv[5] = {0};
-    switch (interfaceParameters[paramPage][input].type) {
-        case parameterNone:
-            return;
-        case parameterCont:
-            cpParameterList[parameterNumber] = pot_value;
-            sprintf(dv, "%4d", cpParameterList[parameterNumber] >> 8);
-            break;
-        case parameterStep: {
-            uint8_t v = pot_value >> (16 - spParameterBits[parameterNumber]);
-            spParameterList[parameterNumber] = v;
-            if (!(interfaceParameters[paramPage][input].number == spOscAWave ||
-                  interfaceParameters[paramPage][input].number == spOscBWave)){
+    switch (input){
+        case 3:{
+            interfacePatchesSavePatch(patchInfo.number);
 
-                sprintf(dv, "%4s", interfaceParameters[paramPage][input].values[spParameterList[parameterNumber]]);
+            lcdClearScreen();
+            lcdChangePos(0,0);
+            lcdSendCharArray((char *) "Saving Patch");
+            delay(3000);
 
-            }else{
-                sprintf(dv, "%4d", spParameterList[parameterNumber]);
-            }
-            break;
+            interfaceParameterUpdatePage(paramPage);
+            return 0;
         }
-        default:
-            break;
+        case 4:{
+            //interfacePatchesSetWriteProtect(static_cast<uint8_t>(!patchInfo.writeProtect));
+            interfacePatchesInitPatch(patchInfo.number);
+
+            lcdClearScreen();
+            lcdChangePos(0,0);
+            lcdSendCharArray((char *) "Initializing Patch");
+            delay(3000);
+
+            interfaceParameterUpdatePage(paramPage);
+            return 0;
+        }
+        case 5:{
+            interfacePatchesUpdateName(10);
+            return 1;
+        }
+        default:break;
     }
-    if (input < NUM_OF_POTS / 2) {
-        cposition(input * 5, 1);
-    } else {
-        cposition((input - 4) * 5, 3);
+
+    if (input < 0) {
+
+        input = -input - 1;
+
+        uint8_t parameterNumber = interfaceParameters[paramPage][input].number;
+
+        static char dv[5] = {0};
+        switch (interfaceParameters[paramPage][input].type) {
+            case parameterNone:
+                return 0;
+            case parameterCont:
+                cpParameterList[parameterNumber] = pot_value;
+                sprintf(dv, "%4d", cpParameterList[parameterNumber] >> 8);
+                break;
+            case parameterStep: {
+                uint8_t v = pot_value >> (16 - spParameterBits[parameterNumber]);
+                spParameterList[parameterNumber] = v;
+                if (!(interfaceParameters[paramPage][input].number == spOscAWave ||
+                      interfaceParameters[paramPage][input].number == spOscBWave)) {
+
+                    sprintf(dv, "%4s", interfaceParameters[paramPage][input].values[spParameterList[parameterNumber]]);
+
+                } else {
+                    sprintf(dv, "%4d", spParameterList[parameterNumber]);
+                }
+                break;
+            }
+            default:
+                break;
+        }
+        if (input < NUM_OF_POTS / 2) {
+            lcdChangePos(input * 5, 1);
+        } else {
+            lcdChangePos((input - 4) * 5, 3);
+        }
+        lcdSendCharArray(dv);
     }
-    putsLCD(dv);
+
+    return 0;
 }
 
 void interfaceParameterUpdatePage(uint8_t paramPage) {
 
-    cmd2LCD(0x01);
+    lcdCmd(0x01);
     delay(2);
     const char *space = " ";
-    cposition(0, 0);
+    lcdChangePos(0, 0);
     for (int i = 0; i < PARAMETER_PAGES / 2; ++i) {
         //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
         if (interfaceParameters[paramPage][i].type != parameterNone) {
-            putsLCD(interfaceParameters[paramPage][i].shortName);
-            putsLCD(space);
+            lcdSendCharArray(interfaceParameters[paramPage][i].shortName);
+            lcdSendCharArray(space);
         }
     }
 
-    cposition(0, 1);
+    lcdChangePos(0, 1);
     for (int i = 0; i < PARAMETER_PAGES / 2; ++i) {
         static char dv[5] = {0};
         //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
         if (interfaceParameters[paramPage][i].type == parameterCont) {
             sprintf(dv, "%4d", cpParameterList[interfaceParameters[paramPage][i].number] >> 8);
-            putsLCD(dv);
-            putsLCD(space);
+            lcdSendCharArray(dv);
+            lcdSendCharArray(space);
         } else if (interfaceParameters[paramPage][i].type == parameterStep) {
             //sprintf(dv, "%4d", interfaceParameters[interface.param_page][i].values[spParameterList[interfaceParameters[interface.param_page][i].number]]);
-            putsLCD(interfaceParameters[paramPage][i].values[spParameterList[interfaceParameters[paramPage][i].number]]);
-            putsLCD(space);
+            lcdSendCharArray(
+                    interfaceParameters[paramPage][i].values[spParameterList[interfaceParameters[paramPage][i].number]]);
+            lcdSendCharArray(space);
         }
     }
 
-    cposition(0, 2);
+    lcdChangePos(0, 2);
     for (int i = PARAMETER_PAGES / 2; i < PARAMETER_PAGES; ++i) {
         if (interfaceParameters[paramPage][i].type != parameterNone) {
-            putsLCD(interfaceParameters[paramPage][i].shortName);
-            putsLCD(space);
+            lcdSendCharArray(interfaceParameters[paramPage][i].shortName);
+            lcdSendCharArray(space);
         }
     }
 
-    cposition(0, 3);
+    lcdChangePos(0, 3);
     for (int i = PARAMETER_PAGES / 2; i < PARAMETER_PAGES; ++i) {
         static char dv[5] = {0};
         //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
         if (interfaceParameters[paramPage][i].type == parameterCont) {
             sprintf(dv, "%4d", cpParameterList[interfaceParameters[paramPage][i].number] >> 8);
-            putsLCD(dv);
-            putsLCD(space);
+            lcdSendCharArray(dv);
+            lcdSendCharArray(space);
         } else if (interfaceParameters[paramPage][i].type == parameterStep) {
             //sprintf(dv, "%4d", spParameterList[interfaceParameters[interface.param_page][i].number]);
             if (!(interfaceParameters[paramPage][i].number == spOscAWave ||
                   interfaceParameters[paramPage][i].number == spOscBWave)) {
-                //putsLCD(interfaceParameters[paramPage][i].values[spParameterList[interfaceParameters[paramPage][i].number]]);
+                //lcdSendCharArray(interfaceParameters[paramPage][i].values[spParameterList[interfaceParameters[paramPage][i].number]]);
                 sprintf(dv, "%4s", interfaceParameters[paramPage][i].values[spParameterList[interfaceParameters[paramPage][i].number]]);
             }else{
                 sprintf(dv, "%4d", spParameterList[interfaceParameters[paramPage][i].number]);
             }
-            putsLCD(dv);
-            putsLCD(space);
+            lcdSendCharArray(dv);
+            lcdSendCharArray(space);
         }
     }
 }

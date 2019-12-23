@@ -38,15 +38,13 @@ struct oscillator_struct{
 };
 
 uint16_t CVtoFrequancy(uint32_t cv);
-void osc_trigger(struct oscillator_struct * osc, uint16_t pitch[NUMBER_OF_OSCILLATORS], byte note,
+void osc_trigger(struct oscillator_struct * osc, uint16_t pitch[NUMBER_OF_OSCILLATORS], uint8_t note,
 	uint8_t osc_amp[NUMBER_OF_OSCILLATORS]);
-void osc_setPitch(struct oscillator_struct * osc, uint32_t value, byte oscillator);
+void osc_setPitch(struct oscillator_struct * osc, uint32_t value, uint8_t oscillator);
 void osc_updateFrequancyTuningWord(struct oscillator_struct * osc);
-// int16_t osc_getOutput(struct oscillator_struct * osc);
-void osc_setWaves(struct oscillator_struct * osc, struct Voice * set_voice,
-	byte lowest_note, byte highest_note, byte oscillator);
-void osc_setWave(struct oscillator_struct * osc, struct Voice * set_voice, byte oscillator);
-//void osc_setAmplitude(struct oscillator_struct * osc, uint16_t amplitude);
+void osc_setWaves(struct oscillator_struct *osc, struct Voice *set_voice,
+				  uint8_t lowest_note, uint8_t highest_note, uint8_t oscillator);
+void osc_setWave(struct oscillator_struct *osc, struct Voice *set_voice, uint8_t oscillator);
 void osc_setSync(struct oscillator_struct * osc, oscSyncMode_t sync);
 void osc_update(struct oscillator_struct * osc);
 
@@ -60,9 +58,9 @@ inline void osc_setAmplitude(struct oscillator_struct * osc, uint16_t amplitude)
 	osc->amplitude = amplitude;
 }
 
-inline int16_t osc_getOutput(struct oscillator_struct * osc){
-	return osc->output_sum;
-}
+//inline int16_t osc_getOutput(struct oscillator_struct * osc){
+//	return osc->output_sum;
+//}
 
 inline int16_t osc_getOutput(struct oscillator_struct * osc, uint8_t number){
 	return osc->output[number];

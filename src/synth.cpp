@@ -193,27 +193,10 @@ void ftm1_isr(void){
 
 	FTM1_SC &= ~FTM_SC_TOF;
 }
-//------------------------------------------------------------------------------
-//Update the interface and check for any human interactions.
-//------------------------------------------------------------------------------
-
-void interfaceCheck(){
-	midi_read();
-    //test_variable = synthesizer.oscillators[1].cv_pitch[1];
-    if(!(tik%8000)) {
-        //test_variable++;
-        //Serial.println(test_variable);
-        //static char dv[10] = {0};
-        //sprintf(dv,"%8d",test_variable);
-        //cposition(0, 2);
-        //putsLCD(dv);
-    }
-    interfaceUpdate();
-}
 
 //------------------------------------------------------------------------------
 // Anything below this line is temporary and subject to change with the
-// exception of function synth_begin()
+// exception of function synthBegin()
 //------------------------------------------------------------------------------
 
 void set_envelopes(){
@@ -310,7 +293,7 @@ void set_lfo(){
 
 }
 
-void synth_begin()
+void synthBegin()
 {
     //initialize interface
     test_variable=0;
@@ -383,26 +366,30 @@ void note_trigger(byte given_pitch, byte velocity) {
 	lfo_trigger(&synthesizer.filterlfo[voice]);
 	ramp_trigger(&synthesizer.pitchramp[voice], cpParameterList[rampAmount] >> 6);
 
-    envelope_trigger(&synthesizer.amplitudeEnvs[voice], 65535);
+    envelope_trigger(&synthesizer.amplitudeEnvs[voice], velocity * 516);
     envelope_trigger(&synthesizer.resonantEnvs[0], velocity * 516);
     envelope_trigger(&synthesizer.filterEnvs[0], cpParameterList[fltrEnvMnt]);
 	//if(current_stage <=1){
 	//}
 	noteTrigger[voice] = 1;
+
+	interfaceUpdateNoteList(voice, 1);
 }
 
 
 void NoteRelease(byte given_pitch) {
-	int i = 0;
-	for(i = 0; i < SYNTH_VOICE_COUNT; i++){
+
+	for(uint8_t i = 0; i < SYNTH_VOICE_COUNT; i++){
         if(notes[i] == given_pitch){
             //amplitude[i] = 0; //temp
-            noteDeath[i] = 1;
+            //noteDeath[i] = 1;
             free_notes[i] = i;
             time_stamps[i] = tik;
 			envelope_setGate(&synthesizer.amplitudeEnvs[i], 0);
 			envelope_setGate(&synthesizer.filterEnvs[i], 0);
 			envelope_setGate(&synthesizer.resonantEnvs[i], 0);
+			interfaceUpdateNoteList(i, 0);
+			//return;
             //envelope_setStage(&synthesizer.amplitudeEnvs[i],RELEASE);
             //envelope_setStage(&synthesizer.filterEnvs[i],RELEASE);
             //envelope_setStage(&synthesizer.resonantEnvs[i],RELEASE);
@@ -463,8 +450,12 @@ void refreshLfos(){
 	}
 }
 
-void parameterChange() {
+void synthParameterChange() {
 	refreshOscillators();
 	refreshLfos();
 	refreshEnvelopes();
+}
+
+void synthWaveChange(uint8_t wave, uint8_t voice, uint8_t oscillator, uint8_t lowNote, uint8_t highNote) {
+	osc_setWaves(&synthesizer.oscillators[voice], &waveStruct[wave], lowNote, highNote, oscillator);
 }

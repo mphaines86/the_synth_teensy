@@ -6,6 +6,7 @@
 #include "util/delay.h"
 #include "EEPROM.h"
 
+//TODO: Maybe Implement COBS encoding?
 
 void EEPROMinit(){
 

@@ -28,8 +28,8 @@
  */
 
 
-// LCD MODULES void cmd2LCD(char cmd)
-void cmd2LCD(char cmd)
+// LCD MODULES void lcdCmd(char cmd)
+void lcdCmd(char cmd)
 {
 	int SendCmd=0;
 
@@ -61,20 +61,20 @@ void cmd2LCD(char cmd)
 
 
 
-void openLCD(void)
+void lcdOpen(void)
 {
 	//LCD_DIR |=  (1 <<PORTD4) |(1 <<PORTD5) |(1 <<PORTD6) |(1 <<PORTD7);       /* configure LCD_DAT port for output */
 	//LCD_E_RS_DIR =  (1 << LCD_E) | (1 << LCD_RS) | (1 << LCD_BL);
 	_delay_ms(10);
-	cmd2LCD(0x28);        /* set 4-bit data, 2-line display, 5x7 font */
-	cmd2LCD(0x0F);        /* turn on display, cursor, blinking */
-	cmd2LCD(0x06);        /* move cursor right */
-	cmd2LCD(0x01);        /* clear screen, move cursor to home */
+	lcdCmd(0x28);        /* set 4-bit data, 2-line display, 5x7 font */
+	lcdCmd(0x0F);        /* turn on display, cursor, blinking */
+	lcdCmd(0x06);        /* move cursor right */
+	lcdCmd(0x01);        /* clear screen, move cursor to home */
 	_delay_ms(20);        /* wait until "clear display" command is complete */
 }
 
 
-void putcLCD(char cx)
+void lcdSendChar(char cx)
 {
 
 	int SendCmd=0;
@@ -104,29 +104,29 @@ void putcLCD(char cx)
 	_delay_us(30);       /* wait until the command is complete */
 }
 
-void putsLCD(const char *ptr)  /* breaks the string down to characters ie a pointer to an address that holds the string */
+void lcdSendCharArray(const char *ptr)  /* breaks the string down to characters ie a pointer to an address that holds the string */
 {
 	while (*ptr) {     /* while char pointer is not null*/
-		putcLCD(*ptr);  /* put the character on the screen on letter at a time */
+		lcdSendChar(*ptr);  /* put the character on the screen on letter at a time */
  		ptr++;   /* increment the memory the pointer points to */
 	}
 }
 
 
-void clearscreen(void)
+void lcdClearScreen(void)
 {
-	cmd2LCD(0x01);  // clears screen  0x08 blanks the display without clearing
-	cposition(0,0);   // returns cursor home
+	lcdCmd(0x01);  // clears screen  0x08 blanks the display without clearing
+	lcdChangePos(0, 0);   // returns cursor home
 }
 
-void clearline(int line)
+void lcdClearline(int line)
 {
-	cposition(0,line);
-	for (int i=0; i < 20; i++) {putsLCD(" "); }
-	cposition(0,line);
+	lcdChangePos(0, line);
+	for (int i=0; i < 20; i++) { lcdSendCharArray(" "); }
+	lcdChangePos(0, line);
 }
 
-void cposition(int x, int y)
+void lcdChangePos(int x, int y)
 {
 	int temp = 0x00 + x;
 
@@ -145,7 +145,7 @@ void cposition(int x, int y)
 		temp += (0xD4);      /// line 4
 		break;
 	}
-	cmd2LCD(temp);
+	lcdCmd(temp);
 }
 
 
@@ -156,16 +156,16 @@ Custom character function
 	states of the pixels.
 	Please note that each time a character is defined the cursor returns home.
 */
-void CChar(int *character, int ccram)
+void lcdCustomChar(int *character, int ccram)
 {
 	int x= 0; /// temp var for counting.
 	char command= (0x40+(ccram*8));  // adds the cc ram address 0x40 + the input for the cc (note: each cc takes 8 bytes)
-	cmd2LCD(command);  /// selects the first location of CG ram
+	lcdCmd(command);  /// selects the first location of CG ram
 
 	while (x < 8)
 	{
-		putcLCD(character[x]);
+		lcdSendChar(character[x]);
 		x++;
 	}
-	cmd2LCD(0x80);   /// send curser back home
+	lcdCmd(0x80);   /// send curser back home
 }
