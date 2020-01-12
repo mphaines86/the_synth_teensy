@@ -24,7 +24,6 @@ struct oscillator_struct{
 	uint32_t frequancy_tuning_word[NUMBER_OF_OSCILLATORS];
 	uint32_t pitch[NUMBER_OF_OSCILLATORS];
 	uint32_t cv_pitch[NUMBER_OF_OSCILLATORS];
-	int16_t output_sum;
 	int16_t output[NUMBER_OF_OSCILLATORS];
 	uint16_t oscillator_mix[NUMBER_OF_OSCILLATORS];
 	uint16_t amplitude;

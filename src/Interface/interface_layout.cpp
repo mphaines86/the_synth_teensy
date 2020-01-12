@@ -4,7 +4,7 @@
 
 #include <cstdint>
 #include <system/EEPROM.h>
-#include <usb_serial.h>
+//#include <usb_serial.h>
 #include <Osc.h>
 #include <synth.h>
 #include "interface_layout.h"
@@ -20,7 +20,7 @@ static struct {
     uint8_t enabled_zones[NUMBER_OF_OSCILLATORS];
 } zone_struct;
 
-uint8_t data_buffer[EEPROM_PATCH_DATA_SIZE] = {0};
+static uint8_t data_buffer[EEPROM_PATCH_DATA_SIZE] = {0};
 
 int8_t interfaceLayoutInit(uint8_t patch) {
     for(uint8_t oscillator=0; oscillator<NUMBER_OF_OSCILLATORS; oscillator++){

@@ -19,6 +19,6 @@ void lcdSendCharArray(const char *ptr);  // send full string to lcd
 void lcdClearScreen(void);   // send command to clear the screen of characters
 void lcdClearline(int line);   // send command to clear a specific  line.
 void lcdChangePos(int x, int y);  // set position of curser (x,y) positions starting at 0,1
-void lcdCustomChar(int *character, int ccram);
+void lcdCustomChar(const uint8_t *character, uint8_t ccram);
 
 #endif /* HD44780_H_ */

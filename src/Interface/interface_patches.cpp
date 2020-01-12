@@ -14,7 +14,7 @@ struct patch_struct_t patchInfo = {
         .writeProtect=0
 };
 
-uint8_t data_buffer[EEPROM_PATCH_DATA_SIZE] = {0};
+static uint8_t data_buffer[EEPROM_PATCH_DATA_SIZE] = {0};
 uint8_t patch_name_edit_marker = 0;
 
 

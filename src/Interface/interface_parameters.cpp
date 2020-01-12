@@ -102,6 +102,10 @@ const struct interfaceParam_s interfaceParameters[PARAMETER_PAGES][8] = {
 uint8_t interfaceParameterHandleUserInput(int8_t input, uint16_t pot_value, uint8_t paramPage) {
 
 
+    Serial.print("Update Parameters: ");
+    Serial.print(input);
+    Serial.print(", ");
+    Serial.println(pot_value);
     switch (input){
         case 3:{
             interfacePatchesSavePatch(patchInfo.number);

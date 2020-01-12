@@ -47,6 +47,17 @@ uint8_t spParameterBits[spCount] = {
 
 };
 
+const uint8_t custom_char[] = {
+    0x06,
+    0x07,
+    0x05,
+    0x04,
+    0x1C,
+    0x1C,
+    0x1C,
+    0x00
+};
+
 static struct {
     uint16_t pot_samples[NUM_OF_POTS][NUM_OF_SAMPLES];
     uint64_t pot_time[NUM_OF_POTS];
@@ -139,6 +150,7 @@ static void handleUserInput(int8_t input){
 
         switch (interface.page) {
             case iParam:
+                Serial.println("Wrong");
                 interface.hold_parameter = interfaceParameterHandleUserInput(input, NULL, interface.param_page);
             case iSample: {
                 if (!interfaceSampleFindZeroPoint(input, interface.param_page)) {
@@ -197,7 +209,7 @@ static void handleUserInput(int8_t input){
     else if(input<iLeft){
         switch (interface.page) {
             case iParam: {
-                interfaceParameterHandleUserInput(input, interface.pot_value[input], interface.param_page);
+                interfaceParameterHandleUserInput(input, interface.pot_value[-input-1], interface.param_page);
                 synthParameterChange();
                 break;
             }
@@ -341,10 +353,12 @@ static void readPotentiometers(){
 
         if (abs((int32_t)(new_value-interface.pot_value[interface.increament_potentiometer])) >= POT_THRESHOLD){
             if(tik - interface.pot_time[interface.increament_potentiometer] >= POT_TIME) {
+                Serial.println(new_value);
                 interface.pot_value[interface.increament_potentiometer] = new_value;
                 handleUserInput(-interface.increament_potentiometer-1);
             }
             else if (abs((int32_t)(new_value-interface.pot_value[interface.increament_potentiometer])) >= 2*POT_THRESHOLD){
+                Serial.println(new_value);
                 interface.pot_value[interface.increament_potentiometer] = new_value;
                 handleUserInput(-interface.increament_potentiometer-1);
             }
@@ -386,6 +400,7 @@ void interfaceInit() {
 
     lcdOpen();
     delay(200);
+    lcdCustomChar(custom_char, 0);
     const char *msg1="mphaines88/Roykeru";
     lcdSendCharArray(msg1);
     lcdChangePos(0, 2);
@@ -429,7 +444,7 @@ void interfaceUpdateNoteList(int8_t note, uint8_t state){
     if (interface.page == iPatch){
         lcdChangePos(note, 3);
         if(state){
-            lcdSendChar(static_cast<char>(0xFF));
+            lcdSendChar(static_cast<char>(0x00));
         }
         else{
             lcdSendChar(static_cast<char>(0b10100000));

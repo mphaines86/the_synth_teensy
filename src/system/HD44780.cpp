@@ -67,10 +67,13 @@ void lcdOpen(void)
 	//LCD_E_RS_DIR =  (1 << LCD_E) | (1 << LCD_RS) | (1 << LCD_BL);
 	_delay_ms(10);
 	lcdCmd(0x28);        /* set 4-bit data, 2-line display, 5x7 font */
+	_delay_ms(100);        /* wait until "clear display" command is complete */
 	lcdCmd(0x0F);        /* turn on display, cursor, blinking */
+	_delay_ms(100);        /* wait until "clear display" command is complete */
 	lcdCmd(0x06);        /* move cursor right */
+	_delay_ms(100);        /* wait until "clear display" command is complete */
 	lcdCmd(0x01);        /* clear screen, move cursor to home */
-	_delay_ms(20);        /* wait until "clear display" command is complete */
+	_delay_ms(100);        /* wait until "clear display" command is complete */
 }
 
 
@@ -156,7 +159,7 @@ Custom character function
 	states of the pixels.
 	Please note that each time a character is defined the cursor returns home.
 */
-void lcdCustomChar(int *character, int ccram)
+void lcdCustomChar(const uint8_t *character, uint8_t ccram)
 {
 	int x= 0; /// temp var for counting.
 	char command= (0x40+(ccram*8));  // adds the cc ram address 0x40 + the input for the cc (note: each cc takes 8 bytes)
