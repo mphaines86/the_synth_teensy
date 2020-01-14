@@ -17,39 +17,6 @@
 	envelope_update(env);
 }*/
 
-/*static inline void updateStageVariables(struct envelope_struct * envelope, EnvelopeStage_t stage){
-
-	switch(stage){
-
-		case ATTACK:
-			envelope->stageLevel = 0;
-			envelope->stageAdd = (envelope->stageLevel * envelope->levelCV) >> 16;
-			envelope->stageMul = ((65535 - envelope->stageLevel) * envelope->levelCV )>> 16;
-			envelope->stageIncreament=envelope->attackIncreament;
-			break;
-		case DECAY:
-			envelope->stageAdd = (envelope->sustainCV * envelope->levelCV) >> 16;
-			envelope->stageMul = ((65535 - envelope->sustainCV) * envelope->levelCV )>> 16;
-			envelope->stageIncreament=envelope->decayIncreament;
-			break;
-		case SUSTAIN:
-			envelope->stageAdd = 0;
-			envelope->stageMul = envelope->levelCV;
-			envelope->stageIncreament = 0;
-			break;
-		case RELEASE:
-			envelope->levelCV = ((uint16_t)envelope->output<<8);
-			envelope->stageAdd = 0;
-			envelope->stageMul = ((65535 - envelope->stageLevel) * envelope->levelCV )>> 16;
-			envelope->stageIncreament=envelope->releaseIncreament;
-			break;
-		default:
-			envelope->stageAdd=0;
-			envelope->stageMul=0;
-			envelope->stageIncreament=0;
-	}
-}*/
-
 static void handlePhaseOverflow(struct envelope_struct * envelope){
 	envelope->phase = 0;
 	envelope->stageIncreament = 0;
@@ -145,4 +112,6 @@ void envelope_update(struct envelope_struct * env){
 
 	env->output = ((((o * env->stageMul) >> 16) + ((env->stageAdd)>>8)) * env->amplitude) >> 16;
 	env->phase+=env->stageIncreament;
+
+	ring_buffer_put(&env->ringBuffer, env->output);
 }

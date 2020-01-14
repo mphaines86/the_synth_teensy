@@ -28,7 +28,7 @@ uint8_t page_update = 0;
 uint8_t spParameterBits[spCount] = {
         4, // wave A
         4, // wave B
-        1, // sync
+        2, // sync
         1, // ring
         1, // fltr
         1, //

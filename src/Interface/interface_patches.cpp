@@ -139,7 +139,6 @@ int8_t interfacePatchesLoadPatch(uint8_t patch){
     }
     for (uint16_t &i : spParameterList) {
         i = (uint16_t) (data_buffer[data_index] << 8) | (data_buffer[data_index+1]);
-        Serial.println(i);
         data_index+=2;
     }
 

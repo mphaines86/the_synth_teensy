@@ -2,9 +2,10 @@
 // Created by michael on 1/12/20.
 //
 
+#include <Arduino.h>
 #include "ring_buffer.h"
 
-static inline void advance_pointer(rbuf_handle_t rbuf){
+static inline void advance_pointer(ring_buffer_t *rbuf){
     if(rbuf->full){
         rbuf->tail = (rbuf->tail + 1) % rbuf->max;
     }
@@ -13,36 +14,36 @@ static inline void advance_pointer(rbuf_handle_t rbuf){
     rbuf->full = (rbuf->head == rbuf->tail);
 }
 
-static inline void retreat_pointer(rbuf_handle_t rbuf){
+static inline void retreat_pointer(ring_buffer_t *rbuf){
     rbuf->full = false;
     rbuf->tail = (rbuf->tail + 1) % rbuf->max;
 }
 
-void ring_buf_init(rbuf_handle_t rbuf, uint8_t *buffer, size_t size) {
+void ring_buffer_init(ring_buffer_t *rbuf, uint16_t *buffer, size_t size) {
     rbuf->buffer = buffer;
-    rbuf->max = size;
-    ring_buf_reset(rbuf);
+    rbuf->max = size/2;
+    ring_buffer_reset(rbuf);
 }
 
-void ring_buf_reset(rbuf_handle_t rbuf){
+void ring_buffer_reset(ring_buffer_t *rbuf){
     rbuf->head = 0;
     rbuf->tail = 0;
     rbuf->full = false;
 }
 
-bool ring_buf_full(rbuf_handle_t rbuf){
+bool ring_buffer_full(ring_buffer_t *rbuf){
     return rbuf->full;
 }
 
-bool ring_buf_empty(rbuf_handle_t rbuf){
+bool ring_buffer_empty(ring_buffer_t *rbuf){
     return (!rbuf->full && (rbuf->head == rbuf->tail));
 }
 
-size_t ring_buf_capacity(rbuf_handle_t rbuf){
+size_t ring_buffer_capacity(ring_buffer_t *rbuf){
     return rbuf->max;
 }
 
-size_t ring_buf_size(rbuf_handle_t rbuf){
+size_t ring_buffer_size(ring_buffer_t *rbuf){
     size_t size = rbuf->max;
 
     if(!rbuf->full){
@@ -57,22 +58,23 @@ size_t ring_buf_size(rbuf_handle_t rbuf){
     return size;
 }
 
-void ring_buf_put(rbuf_handle_t rbuf, uint8_t data){
+void ring_buffer_put(ring_buffer_t *rbuf, uint16_t data){
+    //Serial.println(rbuf->max);
     rbuf->buffer[rbuf->head] = data;
     advance_pointer(rbuf);
 }
 
-int8_t ring_buf_get(rbuf_handle_t rbuf, uint8_t * data){
+uint16_t ring_buffer_get(ring_buffer_t *rbuf) {
 
-    int8_t r = -1;
+    uint16_t data = 0;
 
-    if(!ring_buf_empty(rbuf)){
-        *data = rbuf->buffer[rbuf->tail];
+    if(!ring_buffer_empty(rbuf)){
+        data = rbuf->buffer[rbuf->tail];
         retreat_pointer(rbuf);
 
-        r = 0;
+        //data = 0;
     }
 
-    return r;
+    return data;
 
 }

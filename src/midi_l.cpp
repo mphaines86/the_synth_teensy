@@ -43,6 +43,11 @@ void handleNoteOff(byte channel, byte pitch, byte velocity)
     //Serial.println(test_variable);
 }
 
+void handleStop(){
+    Serial.println("Stop!");
+    NoteRelease();
+}
+
 void handlePitchBend(byte channel, int bend){
     //int i;
     //for(i=0; i < NUM_SYNTH; i++){
@@ -53,6 +58,7 @@ void handlePitchBend(byte channel, int bend){
 }
 
 void handleControlChange(byte channel, byte number, byte value){
+    Serial.println(number);
     return;
     uint8_t paramater;
     uint8_t change = 0;
@@ -129,6 +135,8 @@ void midi_begin() {
     MIDI.setHandlePitchBend(handlePitchBend);
     MIDI.setHandleControlChange(handleControlChange);
     MIDI.setHandleAfterTouchChannel(handleAftertouch);
+    MIDI.setHandleStop(handleStop);
+    MIDI.setHandleSystemReset(handleStop);
     MIDI.begin(MIDI_CHANNEL_OMNI);
 }
 

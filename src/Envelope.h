@@ -9,7 +9,10 @@
 #ifndef ENVELOPE_H
 #define ENVELOPE_H
 
+#define ENV_BUFFER_SIZE 32
+
 #include "synth.h"
+#include "system/ring_buffer.h"
 
 typedef enum {
 	ATTACK = 0,
@@ -33,6 +36,10 @@ struct envelope_struct {
 	uint16_t output;
 
 	EnvelopeStage_t stage;
+
+	uint16_t buffer[ENV_BUFFER_SIZE];
+	struct ring_buffer_t ringBuffer;
+
 	};
 
 //extern inline void envelope_trigger(struct envelope_struct * envelope, uint32_t level);
@@ -103,6 +110,13 @@ inline void envelope_trigger(struct envelope_struct * env, uint16_t level){
 		updateStageVariables(env, ATTACK);
 	}
 	envelope_update(env);
+}
+
+inline void envelope_init(struct envelope_struct * env){
+	ring_buffer_init(&env->ringBuffer, env->buffer, sizeof(env->buffer));
+	for (uint16_t &i : env->buffer) {
+		i =0;
+	}
 }
 
 

@@ -12,6 +12,8 @@
 #define SYNTH_VOICE_COUNT 4
 #define FS 32000
 
+#define AUDIO_DATA_LENGTH 64
+
 #include <Arduino.h>
 
 
@@ -41,12 +43,14 @@ extern volatile uint16_t filter_total;
 void synthBegin();
 void note_trigger(byte given_pitch, byte velocity);
 void NoteRelease(byte given_pitch);
+void NoteRelease();
 void synthParameterChange();
 void synthWaveChange(uint8_t wave, uint8_t voice, uint8_t oscillator, uint8_t lowNote, uint8_t highNote);
 
 void set_envelopes();
 void set_oscillators();
 void set_lfo();
+void synth_main();
 
 
 

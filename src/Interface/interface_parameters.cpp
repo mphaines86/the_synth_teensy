@@ -22,7 +22,7 @@ const struct interfaceParam_s interfaceParameters[PARAMETER_PAGES][8] = {
                 {.type=parameterCont, .number=oscACrse, .shortName="ACrs", .longName="Osc A Coarse", .values={""}},
                 {.type=parameterCont, .number=oscAVol, .shortName="AVol", .longName="Osc A Volume", .values={""}},
                 {.type=parameterCont, .number=oscAMod, .shortName="AMod", .longName="Osc A Mod", .values={""}},
-                {.type=parameterStep, .number=spOscSync, .shortName="Sync", .longName="Osc Sync", .values={"Off ", "On  "}},
+                {.type=parameterStep, .number=spOscSync, .shortName="Sync", .longName="Osc Sync", .values={"Off ", "Hard ", "Ring ", "Soft "}},
                 {.type=parameterStep, .number=spOscAWave, .shortName="Awav", .longName="Osc A Waveform", .values={""}},
                 {.type=parameterNone},
                 {.type=parameterNone},

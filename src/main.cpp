@@ -56,22 +56,7 @@ int main(void) {
     //analogRead(23)
     synthBegin();
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
-    while(true){
-        if(!(tik%8000)) {
-            //test_variable++;
-            //Serial.println(test_variable);
-            //static char dv[10] = {0};
-            //sprintf(dv,"%8d",test_variable);
-            //lcdChangePos(0, 2);
-            //lcdSendCharArray(dv);
-        }
-        midi_read();
-        interfaceUpdate();
-    }
-#pragma clang diagnostic pop
-
+    synth_main();
 }
 
 

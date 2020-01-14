@@ -8,6 +8,7 @@
 
 void handleNoteOn(byte channel, byte pitch, byte velocity);
 void handleNoteOff(byte channel, byte pitch, byte velocity);
+void handleStop();
 void handlePitchBend(byte channel, int bend);
 void handleControlChange(byte channel, byte pitch, byte velocity);
 void handleAftertouch(byte channel, byte value);
