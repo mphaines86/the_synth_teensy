@@ -14,7 +14,7 @@
 
 typedef enum {
 	RAMP_ATTACK = 0,
-  RAMP_SUSTAIN = 1,
+    RAMP_SUSTAIN = 1,
 	RAMP_DEAD = 2,
 	RAMP_NUM_SEGMENTS,
 } RampStage_t;
@@ -41,9 +41,9 @@ void ramp_setup(struct ramp_struct * ramp, uint32_t attack);
 //inline RampStage_t ramp_getStage(struct ramp_struct * ramp);
 void ramp_update(struct ramp_struct * ramp);
 
-inline int32_t ramp_getOutput(struct ramp_struct * ramp)
+inline uint16_t ramp_getOutput(struct ramp_struct *ramp)
 {
-	return ramp->output - ramp->levelCV + 1;
+	return ramp->output;
 }
 
 
@@ -57,14 +57,13 @@ static inline void updateStageVariables(struct ramp_struct * ramp, RampStage_t s
 	switch(stage){
 
 		case RAMP_ATTACK:
-			ramp->stageLevel = 0;
 			ramp->stageAdd = (ramp->stageLevel * ramp->levelCV) >> 16;
-			ramp->stageMul = ((65535 - ramp->stageLevel) * ramp->levelCV )>> 16;
+			ramp->stageMul = ((UINT16_MAX - ramp->stageLevel) * ramp->levelCV )>> 16;
 			ramp->stageIncreament=ramp->attackIncreament;
 			break;
 		case RAMP_SUSTAIN:
 			ramp->stageAdd = 0;
-			ramp->stageMul = 65535;
+			ramp->stageMul = UINT16_MAX;
 			ramp->stageIncreament = 0;
 			break;
 		default:
@@ -74,12 +73,12 @@ static inline void updateStageVariables(struct ramp_struct * ramp, RampStage_t s
 	}
 }
 
-inline void ramp_trigger(struct ramp_struct * ramp, uint16_t level){
+inline void ramp_trigger(struct ramp_struct * ramp, uint16_t rate){
 	ramp->output = 0;
 	ramp->phase = 0;
-	ramp->stageAdd = 0;
+	ramp->stageLevel = 0;
 	ramp->stage = RAMP_ATTACK;
-	ramp->levelCV = level;
+	ramp->attackIncreament = rate;
 
 	updateStageVariables(ramp, RAMP_ATTACK);
 	ramp_update(ramp);

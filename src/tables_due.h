@@ -16,5 +16,6 @@ struct Voice {
     };
     
 extern struct Voice waveStruct[MAX_WAVE_COUNT];
+extern struct Voice waveTableStruct[MAX_WAVE_COUNT];
 
 #endif

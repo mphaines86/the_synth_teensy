@@ -6,6 +6,7 @@
  */
 #include <system/HD44780.h>
 #include <system/EEPROM.h>
+#include <system/usbMidi_l.h>
 #include "Arduino.h"
 #include "tables_due.h"
 #include "synth.h"
@@ -16,8 +17,10 @@
 #include "ramp.h"
 #include "util/delay.h"
 #include "system/utilities.h"
-#include "midi_l.h"
+#include "system/midi_l.h"
 #include "system/ring_buffer.h"
+
+
 
 
 static struct{
@@ -129,17 +132,52 @@ void ftm1_isr(void){
     //ramp_update(&synthesizer.pitchramp[divider]);
 
     //lfo_update(&synthesizer.filterlfo[divider]);
-    //filter_total = (env_getOutput(&synthesizer.filterEnvs[divider]) + (cpParameterList[fltrCutoff] >> 8) +
-    //                aftertouch); //+ lfo_getOutput(&synthesizer.filterlfo[0]));
-    //if (filter_total > 255) filter_total = 255;
+    filter_total = (env_getOutput(&synthesizer.filterEnvs[divider]) + (cpParameterList[fltrCutoff] >> 8) +
+                    aftertouch); //+ lfo_getOutput(&synthesizer.filterlfo[0]));
+    if (filter_total > 255) filter_total = 255;
 
     //amplitude[divider] = env_getOutput(&synthesizer.amplitudeEnvs[divider]);
     //osc_setAmplitude(&synthesizer.oscillators[divider], amplitude[divider]);
 
 
-    GPIOB_PCOR = (1 << 23);
+    GPIOD_PCOR = (1 << 8); // Go to DACA
+    GPIOD_PCOR = (0x000000FF); // Reset all data lines to zero
+    GPIOD_PSOR = cpParameterList[fltrResonance] >> 8; // Set output to data lines
+    //Delay_ns(100);
+    GPIOB_PCOR = (1 << 5); // Enable DAC
+    Delay_ns(50);
+    GPIOB_PSOR = (1 << 5); // Disable Dac
+    Delay_ns(50);
+
+    GPIOD_PSOR = (1 << 8); // go to DACB
+    GPIOD_PCOR = (0x000000FF); // Reset all data lines to zero
+    GPIOD_PSOR = 255; //env_getOutput(&synthesizer.amplitudeEnvs[divider]); // Set output to data lines
+    //Delay_ns(100);
+    GPIOB_PCOR = (1 << 5); // Enable DAC
+    Delay_ns(50);
+    GPIOB_PSOR = (1 << 5); // Disable Dac
+    Delay_ns(50);
+
+    GPIOD_PCOR = (1 << 8); // Go to DACA
+    GPIOD_PCOR = (0x000000FF); // Reset all data lines to zero
+    GPIOD_PSOR = filter_total; // Set output to data lines
+    //Delay_ns(100);
+    GPIOB_PCOR = (1 << 10); // Enable DAC
+    Delay_ns(50);
+    GPIOB_PSOR = (1 << 10); // Disable Dac*/
+    Delay_ns(50);
+
+    GPIOB_PCOR = (0b111 << 20);
+    Delay_ns(20);
+    GPIOB_PSOR = (divider << 20); // Set mux channel
+    Delay_ns(50);
+    GPIOA_PSOR = (1 << 16);
+    Delay_ns(200);
+    GPIOA_PCOR = (1 << 16);
+
+    //GPIOB_PCOR = (1 << 23);
     //Delay_ns(2);
-    GPIOB_PSOR = divider << 20;
+    //GPIOB_PSOR = divider << 20;
 
     /*GPIOD_PCOR = (0b11 << 8);
     GPIOD_PCOR = (0x000000FF);
@@ -184,25 +222,30 @@ void ftm1_isr(void){
     */
      //osc_setModulation(&synthesizer.oscillators[divider], synthesizer.oscillators[divider].cv_pitch[0],0);
     //osc_setModulation(&synthesizer.oscillators[divider], synthesizer.oscillators[divider].cv_pitch[1],1);
-
-    while(FTM1_CNT - timer < 1000){
-
-    }
-
-    GPIOC_PCOR = (0x000000FF);
-    //GPIOC_PSOR = output_sum;
-    GPIOC_PSOR = output_sum_1;
-    GPIOC_PCOR = (0b11 << 8);
+    GPIOB_PCOR = (0b111 << 20);
     Delay_ns(20);
-    GPIOC_PSOR = (1 << 9);
-    Delay_ns(20);
-    GPIOC_PCOR = (1 << 9);
-    GPIOC_PSOR = (1 << 8);
-    GPIOC_PCOR = (0x000000FF);
-    //GPIOC_PSOR = (cpParameterList[fltrResonance] >> 8);
-    GPIOC_PSOR = output_sum_2;
-    Delay_ns(1);
-    GPIOC_PSOR = (1 << 9);
+    //for (uint8_t j = 0; j < SYNTH_VOICE_COUNT; ++j) {
+
+        GPIOB_PSOR = (0 << 20); // Set mux channel
+        Delay_ns(50);
+
+        GPIOB_PCOR = (1 << 23); // Go to DACA
+        GPIOC_PCOR = (0x000000FF); // Reset all data lines to zero
+        GPIOC_PSOR = output_sum_1; // Set output to data lines
+        //Delay_ns(100);
+        GPIOB_PSOR = (1 << 19); // Enable DAC
+        Delay_ns(50);
+        GPIOB_PCOR = (1 << 19); // Disable Dac
+        Delay_ns(50);
+        GPIOB_PSOR = (1 << 23); // go to DACB
+        GPIOC_PCOR = (0x000000FF); // Reset all data lines to zero
+        GPIOC_PSOR = output_sum_2; // Set output to data lines
+        //Delay_ns(100);
+        GPIOB_PSOR = (1 << 19); // Enable DAC
+        Delay_ns(50);
+        GPIOB_PCOR = (1 << 19); // Disable Dac*/
+    //}
+
 
     //osc_updateFrequancyTuningWord(&synthesizer.oscillators[divider]);
     test_variable = FTM1_CNT - timer;
@@ -223,7 +266,7 @@ void set_envelopes(){
         envelope_setup(&synthesizer.filterEnvs[i], 65535, 65535, 65535, 1, 0, 0, UINT16_MAX);
         //envelope_setup(&synthesizer.resonantEnvs[i], 46,56,45333,19);
         envelope_setup(&synthesizer.resonantEnvs[i], 65535, 75, 65535, 500, 0, 0, UINT16_MAX);
-        ramp_setup(&synthesizer.pitchramp[i], 0);
+        ramp_setup(&synthesizer.pitchramp[i], 64);
     }
 
     cpParameterList[fltrCutoff] = 65535;
@@ -271,6 +314,19 @@ void set_oscillators(){
     cpParameterList[oscFMMod] = 0;
     spParameterList[spOscAWave] = 0;
     spParameterList[spOscBWave] = 0;
+    cpParameterList[oscARamp] = 0;
+    cpParameterList[oscBRamp] = 0;
+    cpParameterList[oscAWvRmp] = 0;
+    cpParameterList[oscAWvLfo] = 0;
+    cpParameterList[oscBWvRmp] = 0;
+    cpParameterList[oscBWvLfo] = 0;
+    spParameterList[spOscBTyp] = 0;
+    spParameterList[spOscATyp] = 0;
+    cpParameterList[oscAStart] = 0;
+    cpParameterList[oscAEnd] = 0;
+    cpParameterList[oscBStart] = 0;
+    cpParameterList[oscBEnd] = 0;
+
     for(uint8_t i = 0; i < SYNTH_VOICE_COUNT; i++){
         osc_setParameters(&synthesizer.oscillators[i], static_cast<oscSyncMode_t>(spParameterList[spOscSync]),
                           cpParameterList[oscAVol], cpParameterList[oscBVol]);
@@ -321,7 +377,10 @@ void synthBegin()
     test_variable=0;
     EEPROMinit();
     interfaceInit();
-    midi_begin();
+    midiBegin();
+#ifndef DEBUG
+    usbMidiBegin();
+#endif
 
     FTM1_MODE |= FTM_MODE_WPDIS;
     FTM1_MODE |= FTM_MODE_FTMEN;
@@ -332,6 +391,11 @@ void synthBegin()
     // FTM1_C0V = (F_BUS / 3000) / 32 - 1;
     FTM1_SC = FTM_SC_CLKS(0b01) | FTM_SC_PS(0b0) | FTM_SC_TOF | FTM_SC_TOIE;
     NVIC_ENABLE_IRQ(IRQ_FTM1);
+
+    GPIOB_PSOR = (divider << 20); // Set mux channel
+
+    GPIOB_PSOR = (1 << 5);
+    GPIOB_PSOR = (1 << 10);
 
     /*set_oscillators();
     set_envelopes();
@@ -386,7 +450,7 @@ void note_trigger(byte given_pitch, byte velocity) {
         lfo_trigger(&synthesizer.pitchlfo[voice]);
     }
     lfo_trigger(&synthesizer.filterlfo[voice]);
-    ramp_trigger(&synthesizer.pitchramp[voice], cpParameterList[rampAmount] >> 6);
+    ramp_trigger(&synthesizer.pitchramp[voice], (cpParameterList[rampRate] * cpParameterList[rampRate]) >> 20);
 
     envelope_trigger(&synthesizer.amplitudeEnvs[voice], velocity * 516);
     envelope_trigger(&synthesizer.resonantEnvs[0], velocity * 516);
@@ -459,7 +523,7 @@ void refreshEnvelopes(){
         envelope_setup(&synthesizer.resonantEnvs[i], cpParameterList[AuxAtt], cpParameterList[AuxDec],
                        cpParameterList[AuxSus], cpParameterList[AuxRel], spParameterList[spAuxEnvSpd],
                        spParameterList[spAuxEnvTrig], cpParameterList[AuxAmp]);
-        ramp_setup(&synthesizer.pitchramp[i], cpParameterList[rampRate] >> 6);
+        ramp_setup(&synthesizer.pitchramp[i], (cpParameterList[rampRate] * cpParameterList[rampRate]));
     }
 }
 
@@ -467,10 +531,13 @@ void refreshOscillators(){
 
     for (uint8_t i=0; i < SYNTH_VOICE_COUNT; i++) {
         osc_setSync(&synthesizer.oscillators[i], static_cast<oscSyncMode_t>(spParameterList[spOscSync]));
-        osc_setWaves(&synthesizer.oscillators[i], &waveStruct[spParameterList[spOscAWave]], 0, 127, 0);
-        osc_setWaves(&synthesizer.oscillators[i], &waveStruct[spParameterList[spOscBWave]], 0, 127, 1);
+        osc_setWaves(&synthesizer.oscillators[i], &waveTableStruct[spParameterList[spOscAWave]], 0, 127, 0);
+        osc_setWaves(&synthesizer.oscillators[i], &waveTableStruct[spParameterList[spOscBWave]], 0, 127, 1);
         osc_setFMModulation(&synthesizer.oscillators[i], cpParameterList[oscFMMod] >> 9);
+        osc_setTableValues(&synthesizer.oscillators[i], cpParameterList[oscAStart], cpParameterList[oscAEnd], 0);
+        osc_setTableValues(&synthesizer.oscillators[i], cpParameterList[oscBStart], cpParameterList[oscBEnd], 1);
     }
+    //Serial.println(synthesizer.oscillators->wavetable.table_adder[0]);
 }
 
 void refreshLfos(){
@@ -509,6 +576,7 @@ void synth_main(){
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
     //Serial.println("here!");
     while(true){
+        tik++;
         /*Serial.print("Working with voice ");
         Serial.println(current_voice);
         Serial.print("Buffer available: ");
@@ -521,34 +589,49 @@ void synth_main(){
                     //Serial.println("env work?");
                     envelope_update(&synthesizer.filterEnvs[current_voice]);
                     envelope_update(&synthesizer.resonantEnvs[current_voice]);
+                    ramp_update(&synthesizer.pitchramp[current_voice]);
 
                     lfo_update(&synthesizer.pitchlfo[current_voice]);
                     osc_setModulation(&synthesizer.oscillators[current_voice], (cpParameterList[oscAfreq] >> 8) +
                                                                                ((lfo_getOutput(
                                                                                        &synthesizer.pitchlfo[current_voice]) *
-                                                                                 cpParameterList[oscAMod]) >> 13), 0);
+                                                                                 cpParameterList[oscAMod]) >> 13) -
+                            (((UINT16_MAX - ramp_getOutput(&synthesizer.pitchramp[current_voice]))*
+                                    (cpParameterList[oscARamp] >> 10)) >> 10), 0);
                     osc_setModulation(&synthesizer.oscillators[current_voice], (cpParameterList[oscBfreq] >> 8) +
                                                                                ((lfo_getOutput(
                                                                                        &synthesizer.pitchlfo[current_voice]) *
-                                                                                 cpParameterList[oscBMod]) >> 13), 1);
+                                                                                 cpParameterList[oscBMod]) >> 13) -
+                            (((UINT16_MAX - ramp_getOutput(&synthesizer.pitchramp[current_voice]))*
+                                    (cpParameterList[oscBRamp] >> 10)) >> 10), 1);
                     osc_setAmplitude(&synthesizer.oscillators[current_voice],
                                      env_getOutput(&synthesizer.amplitudeEnvs[current_voice]));
+                    osc_setWaveParameters(&synthesizer.oscillators[current_voice],
+                            ((uint32_t)(cpParameterList[oscAWvRmp] * ramp_getOutput(&synthesizer.pitchramp[current_voice]))) >> 26,
+                            ((uint32_t)(cpParameterList[oscAWvLfo] * lfo_getOutput(&synthesizer.pitchlfo[current_voice]))) >> 27, 0);
+                    osc_setWaveParameters(&synthesizer.oscillators[current_voice],
+                            ((uint32_t)(cpParameterList[oscBWvRmp] * ramp_getOutput(&synthesizer.pitchramp[current_voice]))) >> 26,
+                            ((uint32_t)(cpParameterList[oscBWvLfo] * lfo_getOutput(&synthesizer.pitchlfo[current_voice]))) >> 27, 1);
                 }
                 osc_update(&synthesizer.oscillators[current_voice]);
             }
         }
 
+        //Serial.println(synthesizer.oscillators[current_voice].wavetable.end[0]);
+        //Serial.println(((uint32_t)(cpParameterList[oscAWvRmp] *  ramp_getOutput(&synthesizer.pitchramp[current_voice]))) >> 26);
         current_voice=(current_voice+1)%SYNTH_VOICE_COUNT;
-
-        if(!(tik%8000)) {
+        //if(!(tik%640000)) {
             //test_variable++;
             //Serial.println(test_variable);
             //static char dv[10] = {0};
             //sprintf(dv,"%8d",test_variable);
             //lcdChangePos(0, 2);
             //lcdSendCharArray(dv);
-        }
-        midi_read();
+        //}
+        midiRead();
+#ifndef DEBUG
+        usbMidiRead();
+#endif
         interfaceUpdate();
     }
 #pragma clang diagnostic pop

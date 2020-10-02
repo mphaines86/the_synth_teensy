@@ -8,6 +8,7 @@
 #include "HD44780.h"         /* standard input and output library */
 #include "utilities.h"
 #include "util/delay.h"
+#include "main.h" //TODO: Remove and improve debug code
 
 ///////////////////////////////////////////////////////////////////////////
 /*			LCD		DUE		SAM3X8E
@@ -34,26 +35,26 @@ void lcdCmd(char cmd)
 	int SendCmd=0;
 
 	SendCmd = cmd;
-	SendCmd &=0xF0;           /* zero out the lower 4 bits */
-	SendCmd <<= 7;
+	SendCmd &=0xF0;          /* zero out the lower 4 bits */
+	SendCmd >>= 4;
 
-	GPIOD_PSOR = static_cast<uint32_t>(SendCmd);
-	GPIOB_PCOR = 1 << 5; // pull rs LOW
-	GPIOD_PSOR = 1 << 15;  /* pull E signal to high */
+	GPIOB_PSOR = static_cast<uint32_t>(SendCmd);
+	GPIOB_PCOR = 1 << 4; // pull rs LOW
+	GPIOB_PSOR = 1 << 18;  /* pull E signal to high */
 	_delay_us(8);
 
-	GPIOD_PCOR = 1 << 15; /*pull e signal low*/
-	GPIOD_PCOR = static_cast<uint32_t>(SendCmd);
+	GPIOB_PCOR = 1 << 18; /*pull e signal low*/
+	GPIOB_PCOR = static_cast<uint32_t>(SendCmd);
 
 	SendCmd = cmd & 0x0F;    /* extract the lower four bits */
-	SendCmd <<= 11;
-	GPIOD_PSOR = static_cast<uint32_t>(SendCmd);
-	GPIOD_PSOR = 1 << 15;  /* pull E signal to high */
+	//SendCmd <<= 11;
+	GPIOB_PSOR = static_cast<uint32_t>(SendCmd);
+	GPIOB_PSOR = 1 << 18;  /* pull E signal to high */
 
 	_delay_us(8);
-	GPIOD_PCOR = 1 << 15; // pull e low
-	GPIOD_PCOR = static_cast<uint32_t>(SendCmd);
-	GPIOB_PCOR = 1 << 5; // pull rs low
+	GPIOB_PCOR = 1 << 18; // pull e low
+	GPIOB_PCOR = static_cast<uint32_t>(SendCmd);
+	GPIOB_PCOR = 1 << 4; // pull rs low
 
 	//LCD_E_RS_DAT &= (0 << LCD_E)| (1<< LCD_BL);  /* pull E clock to low */
 	_delay_us(30);       /* wait until the command is complete */
@@ -65,15 +66,22 @@ void lcdOpen(void)
 {
 	//LCD_DIR |=  (1 <<PORTD4) |(1 <<PORTD5) |(1 <<PORTD6) |(1 <<PORTD7);       /* configure LCD_DAT port for output */
 	//LCD_E_RS_DIR =  (1 << LCD_E) | (1 << LCD_RS) | (1 << LCD_BL);
-	_delay_ms(10);
+	//_delay_ms(100);
+	//lcdCmd(0x20);        /* set 4-bit data, 2-line display, 5x7 font */
+	_delay_ms(100);        /* wait until "clear display" command is complete */
 	lcdCmd(0x28);        /* set 4-bit data, 2-line display, 5x7 font */
+	_delay_ms(100);        /* wait until "clear display" command is complete */
+	//lcdCmd(0x08);        /* set 4-bit data, 2-line display, 5x7 font */
 	_delay_ms(100);        /* wait until "clear display" command is complete */
 	lcdCmd(0x0F);        /* turn on display, cursor, blinking */
 	_delay_ms(100);        /* wait until "clear display" command is complete */
-	lcdCmd(0x06);        /* move cursor right */
-	_delay_ms(100);        /* wait until "clear display" command is complete */
+	//lcdCmd(0x06);        /* Set the cursor to move right*/
+	//_delay_ms(100);        /* wait until "clear display" command is complete */
 	lcdCmd(0x01);        /* clear screen, move cursor to home */
 	_delay_ms(100);        /* wait until "clear display" command is complete */
+#ifdef DEBUG
+    Serial.println("Finished LCD init");
+#endif
 }
 
 
@@ -81,27 +89,26 @@ void lcdSendChar(char cx)
 {
 
 	int SendCmd=0;
-	SendCmd = cx;
-	SendCmd &=0xF0;           /* zero out the lower 4 bits */
-	SendCmd <<= 7;
+	SendCmd = cx & 0xF0;    /* zero out the lower 4 bits */
+	SendCmd >>= 4;
 
-    GPIOD_PSOR = static_cast<uint32_t>(SendCmd);
-    GPIOB_PSOR = 1 << 5; // pull rs HIGH
-    GPIOD_PSOR = 1 << 15;  /* pull E signal to high */
+    GPIOB_PSOR = static_cast<uint32_t>(SendCmd);
+    GPIOB_PSOR = 1 << 4; // pull rs HIGH
+    GPIOB_PSOR = 1 << 18;  /* pull E signal to high */
     _delay_us(8);
 
-    GPIOD_PCOR = 1 << 15; /*pull e signal low*/
-    GPIOD_PCOR = static_cast<uint32_t>(SendCmd);
+    GPIOB_PCOR = 1 << 18; /*pull e signal low*/
+    GPIOB_PCOR = static_cast<uint32_t>(SendCmd);
 
     SendCmd = cx & 0x0F;    /* extract the lower four bits */
-    SendCmd <<= 11;
-    GPIOD_PSOR = static_cast<uint32_t>(SendCmd);
-    GPIOD_PSOR = 1 << 15;  /* pull E signal to high */
+    //SendCmd <<= 11;
+    GPIOB_PSOR = static_cast<uint32_t>(SendCmd);
+    GPIOB_PSOR = 1 << 18;  /* pull E signal to high */
 
     _delay_us(8);
-    GPIOD_PCOR = 1 << 15; // pull e low
-    GPIOD_PCOR = static_cast<uint32_t>(SendCmd);
-    GPIOB_PCOR = 1 << 5; // pull rs low
+    GPIOB_PCOR = 1 << 18; // pull e low
+    GPIOB_PCOR = static_cast<uint32_t>(SendCmd);
+    GPIOB_PCOR = 1 << 4; // pull rs low
 
 	//LCD_E_RS_DAT &= (0 << LCD_E)| (1<< LCD_BL);  /* pull E clock to low */
 	_delay_us(30);       /* wait until the command is complete */

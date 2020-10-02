@@ -4,34 +4,36 @@
 #include <stdint.h>
 
 #define NUM_OF_POTS 8
-#define PARAMETER_PAGES 8
+#define PARAMETER_PAGES 9
 
 typedef  enum {
     parameterNone=0, parameterCont, parameterStep, parameterCust
 } interfaceParamType_e;
 
 typedef enum {
-  oscAfreq=0, oscACrse=1, oscAVol=2, oscAMod=3,
-  oscBfreq=4, oscBCrse=5, oscBVol=6, oscBMod=7, oscFMMod=8,
-  fltrCutoff=9, fltrResonance=10, fltrEnvMnt=11, fltrMod=12,
-  fltrAtt=13, fltrDec=14, fltrSus=15, fltrRel=16, fltrAmp=17,
-  AmpAtt=18, AmpDec=19, AmpSus=20, AmpRel=21, AmpAmp=22,
-  AuxAtt=23, AuxDec=24, AuxSus=25, AuxRel=26, AuxAmp=27,
-  lfoAPitch=28, lfoARate=29,
-  lfoBPitch=30, lfoBRate=31,
-  rampRate=32, rampAmount=33,
+  oscAfreq=0, oscACrse=1, oscAVol=2, oscAMod=3, oscARamp=4,
+  oscBfreq=5, oscBCrse=6, oscBVol=7, oscBRamp=8, oscBMod=9, oscFMMod=10,
+  oscAStart=11, oscAEnd=12, oscBStart=13, oscBEnd=14,
+  oscAWvLfo=15, oscAWvRmp=16, oscBWvLfo=17, oscBWvRmp=18,
+  fltrCutoff=19, fltrResonance=20, fltrEnvMnt=21, fltrMod=22,
+  fltrAtt=23, fltrDec=24, fltrSus=25, fltrRel=26, fltrAmp=27,
+  AmpAtt=28, AmpDec=29, AmpSus=30, AmpRel=31, AmpAmp=32,
+  AuxAtt=33, AuxDec=34, AuxSus=35, AuxRel=36, AuxAmp=37,
+  lfoAPitch=38, lfoARate=39,
+  lfoBPitch=40, lfoBRate=41,
+  rampRate=42, rampAmount=43,
 
   cpCount
 
 } ptContinuousParameters_t;
 
 typedef enum {
-  spOscAWave=0, spOscBWave=1, spOscSync=2, spOscRing=3,
-   spFltrEnvTrig=4, spFltrEnvSpd=5,
-   spAmpEnvTrig=6, spAmpEnvSpd=7,
-   spAuxEnvTrig=8, spAuxEnvSpd=9,
-   spLfoAShape=10, spLfoAspeed=11, spLfoATrk=12, spLfoATrig=13,
-   spLfoBShape=14, spLfoBspeed=15, spLfoBTrk=16, spLfoBTrig=17,
+  spOscAWave=0, spOscBWave=1, spOscSync=2, spOscATyp=3, spOscBTyp=4,
+   spFltrEnvTrig=5, spFltrEnvSpd=6,
+   spAmpEnvTrig=7, spAmpEnvSpd=8,
+   spAuxEnvTrig=9, spAuxEnvSpd=10,
+   spLfoAShape=11, spLfoAspeed=12, spLfoATrk=13, spLfoATrig=14,
+   spLfoBShape=15, spLfoBspeed=16, spLfoBTrk=17, spLfoBTrig=18,
 
   spCount
 

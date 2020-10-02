@@ -33,7 +33,15 @@ void osc_init(struct oscillator_struct * osc){
 		osc->phase_accumulator[i] = 0;
 		osc->frequancy_tuning_word[i] = 0;
 		osc->modulations[i] = 0;
-		osc_setWaves(osc, &waveStruct[0], 0, 127, i);
+		osc_setWaves(osc, &waveTableStruct[0], 0, 127, i);
+
+		osc->wavetable.start[i] = 0;
+		osc->wavetable.end[i] = 262144;
+		osc->wavetable.table_adder[i] = 0;
+		osc->wavetable.table_accumulator[i] = 0;
+		osc->wavetable.table_end[i] = 0;
+		osc->wavetable.table_start[i] = 0;
+		osc->wavetable.table_location[i]=0;
 	}
 	osc->sync = osmNone;
 	osc->fmModulation = 0;
@@ -47,11 +55,16 @@ void osc_trigger(struct oscillator_struct * osc, uint16_t pitch[NUMBER_OF_OSCILL
 		byte i;
 		//uint16_t pitch = 240 * note;
 		for (i = 0; i < NUMBER_OF_OSCILLATORS; i++){
+            osc->phase_accumulator[i] = osc->wavetable.start[i];
+			//osc->wavetable.start[i]=osc->wavetable.table_start[i];
+			//osc->wavetable.end[i]=osc->wavetable.table_start[i] + 262144;
+			//osc->wavetable.table_accumulator[i]=0;
+
 			osc->direction[i] = 1;
             osc->oscillator_mix[i] = osc_amp[i];
             osc->cv_pitch[i] = (pitch[i] + osc->all_wavs[i][osc->note]->pitch_from_C5) * 240;
             osc->pitch[i] = CVtoFrequancy(pitch[i]);
-            osc->phase_accumulator[i]= osc->all_wavs[i][osc->note]->start_point;
+            //osc->phase_accumulator[i]= osc->all_wavs[i][osc->note]->start_point;
 		}
 		//test_variable = osc->cv_pitch[0];
 
@@ -89,7 +102,7 @@ void osc_updateFrequancyTuningWord(struct oscillator_struct * osc){
 		osc->frequancy_tuning_word[i] = osc->pitch[i];
 	}
 }
-
+#ifdef SAMPLE
 void osc_update(struct oscillator_struct *osc){
 
     //for(uint8_t i = 0; i < NUMBER_OF_OSCILLATORS; i ++){
@@ -148,3 +161,78 @@ void osc_update(struct oscillator_struct *osc){
     //}
     //osc->output_sum = output;
 }
+#endif
+#ifndef SAMPLE
+void osc_update(struct oscillator_struct *osc){
+
+	//for(uint8_t i = 0; i < NUMBER_OF_OSCILLATORS; i ++){
+
+	//Oscillator 1
+	//osc->frequancy_tuning_word[0] = osc->pitch[0];
+	osc->frequancy_tuning_word[0] = CVtoFrequancy(osc->cv_pitch[0] + osc->modulations[0] +
+												  osc->output[1] * osc->fmModulation);
+
+	osc->phase_accumulator[0] += osc->frequancy_tuning_word[0];
+	//osc->wavetable.table_accumulator[0] += osc->wavetable.table_adder[0];
+
+	/*if(osc->wavetable.table_accumulator[0] > 262144){
+		osc->wavetable.table_accumulator[0] = 0;
+		if(osc->wavetable.end[0] < osc->wavetable.table_end[0]){
+			osc->wavetable.start[0]+=262144;
+			osc->wavetable.end[0]+=262144;
+			osc->phase_accumulator[0]+=262144;
+		}
+	}*/
+
+	//Check to see if we reached the end of the wave
+	if (osc->phase_accumulator[0] >= osc->wavetable.end[0]) {
+	//if (osc->phase_accumulator[0] >= osc->all_wavs[0][osc->note]->end_length) {
+
+		//uint32_t test = osc->all_wavs[0][osc->note]->end_length - osc->all_wavs[0][osc->note]->loop_point;
+
+		osc->phase_accumulator[0] -= 262144;
+
+		if (osc->sync == osmHard){
+			//test_variable++;
+			osc->phase_accumulator[1]=osc->wavetable.start[1];
+		}
+
+
+	}
+	osc->output[0] = (127 - *(osc->all_wavs[0][osc->note]->wave +
+							  ((osc->phase_accumulator[0]) >> 9)));
+
+	// Oscillator 2
+	//osc->frequancy_tuning_word[1] = osc->pitch[1];
+
+	osc->phase_accumulator[1] += osc->frequancy_tuning_word[1];
+	//osc->wavetable.table_accumulator[1] += osc->wavetable.table_adder[1];
+
+	/*if(osc->wavetable.table_accumulator[1] > 262144){
+		osc->wavetable.table_accumulator[1] = 0;
+		if(osc->wavetable.end[1] < osc->wavetable.table_end[1]){
+			osc->wavetable.start[1]+=262144;
+			osc->wavetable.end[1]+=262144;
+			osc->phase_accumulator[1]+=262144;
+		}
+	}*/
+		//Check to see if we reached the end of the wave
+	if (osc->phase_accumulator[1] >= osc->wavetable.end[1]) {
+		//if (osc->phase_accumulator[0] >= osc->all_wavs[0][osc->note]->end_length) {
+
+		//uint32_t test = osc->all_wavs[0][osc->note]->end_length - osc->all_wavs[0][osc->note]->loop_point;
+
+		osc->phase_accumulator[1] -= 262144;
+	}
+    osc->output[1] = (127 - *(osc->all_wavs[1][osc->note]->wave +
+							  ((osc->phase_accumulator[1]) >> 9)));
+
+	if(osc->sync == osmRing){
+		osc->output[1] = (osc->output[0] * osc->output[1]) >> 6;
+	}
+
+	ring_buffer_put(&osc->ringBuffer[0], (uint8_t) (127 + ((((osc->output[0] * osc->oscillator_mix[0]) >> 8) * osc->amplitude) >> 8)));
+	ring_buffer_put(&osc->ringBuffer[1], (uint8_t) (127 + ((((osc->output[1] * osc->oscillator_mix[1]) >> 8) * osc->amplitude) >> 8)));
+
+}
+#endif

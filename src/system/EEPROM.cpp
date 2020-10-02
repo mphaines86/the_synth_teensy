@@ -5,8 +5,7 @@
 #include "i2c_t3.h"
 #include "util/delay.h"
 #include "EEPROM.h"
-
-//TODO: Maybe Implement COBS encoding?
+#include "main.h" //TODO: Remove and improve DEBUG code
 
 void EEPROMinit(){
 
@@ -25,13 +24,19 @@ int8_t readData(uint8_t i2c_addr, uint16_t addr, uint8_t *data, uint16_t size){
         case 0:
             break;
         case 1:
+#ifdef DEBUG
             Serial.println("Data too long");
+#endif
             return -1;
         case 2:
+#ifdef DEBUG
             Serial.println("recieved NACK on address");
+#endif
             return -2;
         case 3:
+#ifdef DEBUG
             Serial.println("recieved NACK on data");
+#endif
             return -3;
         default:
             return 0;
@@ -49,7 +54,9 @@ int8_t readData(uint8_t i2c_addr, uint16_t addr, uint8_t *data, uint16_t size){
             --data_needed;
         }
         if (data_needed!=0){
+#ifdef DEBUG
             Serial.println("Data not fully received");
+#endif
             return -1;
         }
         return 1;
@@ -81,13 +88,19 @@ int8_t writeData(uint8_t i2c_addr, uint16_t addr, uint8_t *data, uint16_t size){
                 case 0:
                     break;
                 case 1:
+#ifdef DEBUG
                     Serial.println("Data too long");
+#endif
                     return -1;
                 case 2:
+#ifdef DEBUG
                     Serial.println("recieved NACK on address");
+#endif
                     return -2;
                 case 3:
+#ifdef DEBUG
                     Serial.println("recieved NACK on data");
+#endif
                     return -3;
                 default:
                     break;

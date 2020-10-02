@@ -10,7 +10,7 @@
 #define OSC_H
 
 #define NUMBER_OF_OSCILLATORS 2
-#define OSC_BUFFER_SIZE 256
+#define OSC_BUFFER_SIZE 1024
 
 #include "Arduino.h"
 #include "system/ring_buffer.h"
@@ -34,6 +34,7 @@ struct oscillator_struct{
 	uint16_t amplitude;
 	uint8_t note;
 	int8_t direction[NUMBER_OF_OSCILLATORS];
+	uint16_t parameter[NUMBER_OF_OSCILLATORS];
 
 
 	// Pointer from each possible note assignment to wave sample
@@ -41,6 +42,16 @@ struct oscillator_struct{
 
 	uint16_t buffer[NUMBER_OF_OSCILLATORS][OSC_BUFFER_SIZE];
 	struct ring_buffer_t ringBuffer[NUMBER_OF_OSCILLATORS];
+
+	struct {
+	    uint32_t start[NUMBER_OF_OSCILLATORS];
+	    uint32_t end[NUMBER_OF_OSCILLATORS];
+	    uint32_t table_start[NUMBER_OF_OSCILLATORS];
+	    uint32_t table_end[NUMBER_OF_OSCILLATORS];
+	    uint32_t table_accumulator[NUMBER_OF_OSCILLATORS];
+	    uint32_t table_adder[NUMBER_OF_OSCILLATORS];
+	    uint16_t table_location[NUMBER_OF_OSCILLATORS];
+	} wavetable;
 
 };
 
@@ -63,8 +74,36 @@ inline void osc_setModulation(struct oscillator_struct *osc, uint32_t value, byt
 	osc->frequancy_tuning_word[oscillator] = CVtoFrequancy(osc->cv_pitch[oscillator] + osc->modulations[oscillator]);
 }
 
+inline void osc_setWaveParameters(struct oscillator_struct *osc, uint16_t ramp_mod, int32_t lfo_mod, byte oscillator) {
+	//value = value >> 5;
+	//osc->wavetable.table_adder[oscillator] = ramp_mod >> 4;
+	//osc->wavetable.table_location[oscillator] =
+	int32_t value  = (ramp_mod + lfo_mod) * 262144 + osc->wavetable.table_start[oscillator];
+	if(value > 16777216){
+		osc->wavetable.start[oscillator] = 16515072;
+		osc->wavetable.end[oscillator] = 16777216;
+	}
+	else if (value < 0){
+		osc->wavetable.start[oscillator] = 0;
+		osc->wavetable.end[oscillator] = 262144;
+	}
+	else {
+		osc->wavetable.start[oscillator] = value;
+		osc->wavetable.end[oscillator] = value + 262144;
+	}
+}
+
 inline void osc_setAmplitude(struct oscillator_struct * osc, uint16_t amplitude){
 	osc->amplitude = amplitude;
+}
+
+inline void osc_setTableValues(struct oscillator_struct * osc, uint16_t start, uint16_t end, uint8_t oscillator){
+	if(start > end){
+	    end = start;
+	}
+
+    osc->wavetable.table_start[oscillator] = (start >> 10) * 262144;
+	osc->wavetable.table_end[oscillator] = ((end >> 10) + 1) * 262144;
 }
 
 //inline int16_t osc_getOutput(struct oscillator_struct * osc){

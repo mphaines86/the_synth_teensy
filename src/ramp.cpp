@@ -68,6 +68,7 @@ static void handlePhaseOverflow(struct ramp_struct * ramp){
 
 void ramp_setup(struct ramp_struct * ramp, uint32_t attack){
 	ramp->attackIncreament=attack;
+	ramp->levelCV = UINT16_MAX;
 }
 
 void ramp_setStage(struct ramp_struct * ramp, RampStage_t stage){
@@ -88,7 +89,7 @@ void ramp_update(struct ramp_struct * ramp){
 			o = (ramp->phase)>>4;
 			break;
     case RAMP_SUSTAIN:
-			o = (ramp->levelCV);
+			o = UINT16_MAX; //(ramp->levelCV);
 			break;
 		default:
 			ramp->stageAdd = 0

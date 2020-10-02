@@ -8,13 +8,14 @@
 #include "interface_parameters.h"
 #include "interface_patches.h"
 #include "interface_layout.h"
+#include "main.h" //TODO: Remove and find better DEBUG code
 
 #define TIME_BUFFER 100
 #define DEBOUNCE_MAX 20
 #define SAMPLE_PAGES 16
 #define LAYOUT_PAGES 2
-#define POT_TIME 250
-#define POT_THRESHOLD 511
+#define POT_TIME 200
+#define POT_THRESHOLD 128 // 511
 #define NUM_OF_BUTTONS 8
 #define BUTTON_TIME 250
 #define NUM_OF_SAMPLES 20
@@ -29,7 +30,8 @@ uint8_t spParameterBits[spCount] = {
         4, // wave A
         4, // wave B
         2, // sync
-        1, // ring
+        1, // A Type
+        1, // B Type
         1, // fltr
         1, //
         1, // Amp
@@ -117,7 +119,7 @@ static void handleUserInput(int8_t input){
 
     // Set register output to 0 or LCD becomes corrupted
     GPIOA_PSOR = (1 << 17);
-    GPIOD_PCOR = (interface.increament_potentiometer << 11);
+    GPIOB_PCOR = (interface.increament_potentiometer);
 
     if (interface.hold_parameter){
         switch (interface.page){
@@ -150,8 +152,9 @@ static void handleUserInput(int8_t input){
 
         switch (interface.page) {
             case iParam:
-                Serial.println("Wrong");
+                //Serial.println("Wrong");
                 interface.hold_parameter = interfaceParameterHandleUserInput(input, NULL, interface.param_page);
+                return;
             case iSample: {
                 if (!interfaceSampleFindZeroPoint(input, interface.param_page)) {
                     return;
@@ -225,6 +228,15 @@ static void handleUserInput(int8_t input){
             }
             case iLayout:
                 break;
+            case iPatch:
+                /*if(input==-1) {
+                    Serial.println("Patch Select Test");
+                    uint32_t temp_var = EEPROM_NUM_OF_PATCHES * ((interface.pot_value[-input - 1] >> 8)) / 255;
+                    Serial.println(temp_var);
+                    interface.param_page = temp_var;
+                }
+                interfaceUpdatePage();*/
+                break;
             default:
                 break;
         }
@@ -264,7 +276,6 @@ void interfaceUpdatePage(){
         case iPatch:{
             if (interface.param_page == -1)
                 interface.param_page = EEPROM_NUM_OF_PATCHES-1;
-
             interface.param_page %= EEPROM_NUM_OF_PATCHES;
             interfacePatchesUpdatePage(interface.param_page);
             break;
@@ -279,19 +290,20 @@ static void readButton(){
     uint32_t output = 0;
     //test_variable = (GPIOC_PDIR&(1<<port));
 
-    output = (GPIOC_PDIR&(1<<10))>>10;
+    output = (GPIOA_PDIR&(1<<5))>>5;
     //uint32_t output = debounce(10, interface.increament_button);
     //uint8_t output = (uint8_t)(GPIOC_PDIR&(1<<10))>>10;
     if(output == 1){
         //test_variable = tik - interface.lastButtonPress;
         //Serial.println(test_variable);
         if (tik - interface.lastButtonPress >= BUTTON_TIME){
-            //Serial.print(interface.increament_button);
-            //Serial.print(":");
-            //Serial.println(output);
+#ifdef DEBUG
+            Serial.print(interface.increament_button);
+            Serial.print(":");
+            Serial.println(output);
             updatePage = 1;
             GPIOA_PSOR = (1 << 17);
-
+#endif
             if (interface.increament_button < 2) {
                 if (!interface.increament_button) {
                     interface.param_page--;
@@ -322,7 +334,7 @@ static void readPotentiometers(){
     page_update = 0;
 
     if (!analogBusy){
-        GPIOD_PSOR = (interface.increament_potentiometer << 11);
+        GPIOB_PSOR = interface.increament_potentiometer;
         GPIOA_PCOR = (1 << 17);
         analogBusy = 1;
         ADC0_SC1A = 23;
@@ -342,27 +354,33 @@ static void readPotentiometers(){
         interface.pot_samples[interface.increament_potentiometer]
         [interface.current_sample[interface.increament_potentiometer]]= ADC0_RA;
         GPIOA_PSOR = (1 << 17);
-        GPIOD_PCOR = (interface.increament_potentiometer << 11);
+        GPIOB_PCOR = interface.increament_potentiometer;
         analogBusy = 0;
 
         memcpy(&tmp[0], &interface.pot_samples[interface.increament_potentiometer][0],
                NUM_OF_SAMPLES*sizeof(uint16_t));
         qsort(tmp, NUM_OF_SAMPLES, sizeof(uint16_t), uint16Compare);
 
-        new_value = tmp[NUM_OF_SAMPLES/2];
+        new_value = tmp[NUM_OF_SAMPLES/2] * 16;
+
+        if ((new_value >> 8) <= 4){
+            new_value=0;
+        }
 
         if (abs((int32_t)(new_value-interface.pot_value[interface.increament_potentiometer])) >= POT_THRESHOLD){
-            if(tik - interface.pot_time[interface.increament_potentiometer] >= POT_TIME) {
-                Serial.println(new_value);
+            if(tik - interface.pot_time[interface.increament_potentiometer] <= POT_TIME) {
+                Serial.print(interface.increament_potentiometer);
+                Serial.print(" t: ");
+                Serial.println(new_value >> 8);
                 interface.pot_value[interface.increament_potentiometer] = new_value;
                 handleUserInput(-interface.increament_potentiometer-1);
+                interface.pot_time[interface.increament_potentiometer] = tik;
             }
             else if (abs((int32_t)(new_value-interface.pot_value[interface.increament_potentiometer])) >= 2*POT_THRESHOLD){
-                Serial.println(new_value);
                 interface.pot_value[interface.increament_potentiometer] = new_value;
                 handleUserInput(-interface.increament_potentiometer-1);
+                interface.pot_time[interface.increament_potentiometer] = tik;
             }
-            interface.pot_time[interface.increament_potentiometer] = tik;
         }
 
         interface.increament_potentiometer=
@@ -409,28 +427,28 @@ void interfaceInit() {
     lcdSendCharArray(msg2);
     delay(2000);
     //lcdCmd(0x01);
-    analogReadRes(16);
+    analogReadRes(12);
 
-    Serial.println(sizeof(char));
-    Serial.println(sizeof(char *));
-    Serial.println(sizeof(uint8_t));
-    Serial.println(sizeof(uint8_t *));
+    //Serial.println(sizeof(char));
+    //Serial.println(sizeof(char *));
+    //Serial.println(sizeof(uint8_t));
+    //Serial.println(sizeof(uint8_t *));
     interface.hold_parameter = 0;
     interface.page=iPatch;
 
-    Serial.println(interfacePatchesInitSystem());
+    interfacePatchesInitSystem();
     interface.param_page = patchInfo.number;
     handleUserInput(interface.page);
     //interfaceUpdatePage();
-    interfaceUpdate();
+    //interfaceUpdate();
 
 }
 
 
 void interfaceUpdate(){
      if (updatePage & !analogBusy){
-        //interfaceUpdatePage();
-        //updatePage = 0;
+        interfaceUpdatePage();
+        updatePage = 0;
     }
     readPotentiometers();
 

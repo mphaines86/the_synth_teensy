@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstddef>
 
+
 struct ring_buffer_t{
     uint16_t * buffer;
     size_t head;

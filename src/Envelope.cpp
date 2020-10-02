@@ -58,11 +58,21 @@ static void handlePhaseOverflow(struct envelope_struct * envelope){
 void envelope_setup(struct envelope_struct *envelope, uint32_t attack, uint32_t decay, uint16_t sustain,
                     uint32_t release,
                     uint8_t speed, uint8_t trigger, uint16_t amp) {
-	uint8_t shifter = speed * 4 + 18;
-    envelope->attackIncreament=attack*attack >> shifter;
-	envelope->decayIncreament=decay*decay >> shifter;
+	uint8_t shifter = speed * 2 + 7;
+    /*envelope->attackIncreament=attack*attack/2 >> shifter;
+	envelope->decayIncreament=decay*decay/2 >> shifter;
 	envelope->sustainCV=sustain;
-	envelope->releaseIncreament=release*release >> shifter;
+	envelope->releaseIncreament=release*release/2 >> shifter;
+	envelope->trigger=trigger;
+	envelope->amplitude=amp;
+	*/
+	uint32_t temp_var = attack >> 8;
+	envelope->attackIncreament= temp_var*temp_var*temp_var >> shifter;
+	temp_var = decay >> 8;
+	envelope->decayIncreament= temp_var*temp_var*temp_var >> shifter;
+	envelope->sustainCV=sustain;
+	temp_var = release >> 8;
+	envelope->releaseIncreament= temp_var*temp_var*temp_var >> shifter;
 	envelope->trigger=trigger;
 	envelope->amplitude=amp;
 }

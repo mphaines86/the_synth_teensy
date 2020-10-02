@@ -7,6 +7,7 @@
 
 static inline void advance_pointer(ring_buffer_t *rbuf){
     if(rbuf->full){
+        //Serial.println("F");
         rbuf->tail = (rbuf->tail + 1) % rbuf->max;
     }
 
@@ -73,6 +74,11 @@ uint16_t ring_buffer_get(ring_buffer_t *rbuf) {
         retreat_pointer(rbuf);
 
         //data = 0;
+    }
+    else{
+#ifdef DEBUG
+        Serial.println("UR");
+#endif
     }
 
     return data;

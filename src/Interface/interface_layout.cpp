@@ -42,7 +42,9 @@ int8_t interfaceLayoutInit(uint8_t patch) {
 int8_t interfaceLayoutLoad(uint8_t patch) {
     uint16_t data_location = patch*EEPROM_PATCH_DATA_SIZE + 1 + EEPROM_PATCH_NAME_LENGTH + spCount + cpCount + 1;
     if(readData(80, data_location, data_buffer, LAYOUT_DATA_LENGTH)!=1){
+#ifdef DEBUG
         Serial.println("Failed to get layout Information");
+#endif
         return -1;
     };
 
@@ -89,7 +91,9 @@ int8_t interfaceLayoutSave(uint8_t patch) {
     uint16_t data_location = patch*EEPROM_PATCH_DATA_SIZE + 1 + EEPROM_PATCH_NAME_LENGTH + spCount + cpCount + 1;
 
     if(writeData(80, data_location, data_buffer, data_element)!=1){
+#ifdef DEBUG
         Serial.println("Failed to save layout information");
+#endif
         return -1;
     }
 

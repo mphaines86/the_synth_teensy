@@ -9,7 +9,7 @@
 #ifndef ENVELOPE_H
 #define ENVELOPE_H
 
-#define ENV_BUFFER_SIZE 32
+#define ENV_BUFFER_SIZE 128
 
 #include "synth.h"
 #include "system/ring_buffer.h"

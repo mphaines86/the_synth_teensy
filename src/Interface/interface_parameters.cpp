@@ -21,21 +21,31 @@ const struct interfaceParam_s interfaceParameters[PARAMETER_PAGES][8] = {
                 {.type=parameterCont, .number=oscAfreq, .shortName="AFrq", .longName="Osc A Frequancy", .values={""}},
                 {.type=parameterCont, .number=oscACrse, .shortName="ACrs", .longName="Osc A Coarse", .values={""}},
                 {.type=parameterCont, .number=oscAVol, .shortName="AVol", .longName="Osc A Volume", .values={""}},
-                {.type=parameterCont, .number=oscAMod, .shortName="AMod", .longName="Osc A Mod", .values={""}},
-                {.type=parameterStep, .number=spOscSync, .shortName="Sync", .longName="Osc Sync", .values={"Off ", "Hard ", "Ring ", "Soft "}},
+                {.type=parameterCont, .number=oscAMod, .shortName="AMod", .longName="Osc A Lfo Mod", .values={""}},
+                {.type=parameterCont, .number=oscARamp, .shortName="ARmp", .longName="Osc A Ramp Mod", .values={""}},
+                {.type=parameterStep, .number=spOscSync, .shortName="Sync", .longName="Osc Sync", .values={"Off ", "Hard", "Ring", "Soft"}},
                 {.type=parameterStep, .number=spOscAWave, .shortName="Awav", .longName="Osc A Waveform", .values={""}},
-                {.type=parameterNone},
-                {.type=parameterNone},
+                {.type=parameterStep, .number=spOscATyp, .shortName="Type", .longName="Osc A Type", .values={"Smpl", "Wave"}},
         },
         {
                 {.type=parameterCont, .number=oscBfreq, .shortName="BFrq", .longName="Osc B Frequancy", .values={""}},
                 {.type=parameterCont, .number=oscBCrse, .shortName="BCrs", .longName="Osc B Coarse", .values={""}},
                 {.type=parameterCont, .number=oscBVol, .shortName="BVol", .longName="Osc B Volume", .values={""}},
-                {.type=parameterCont, .number=oscBMod, .shortName="BMod", .longName="Osc B Mod", .values={""}},
+                {.type=parameterCont, .number=oscBMod, .shortName="BMod", .longName="Osc B Lfo Mod", .values={""}},
+                {.type=parameterCont, .number=oscBRamp, .shortName="BRmp", .longName="Osc B Ramp Mod", .values={""}},
                 {.type=parameterCont, .number=oscFMMod, .shortName="Fmod", .longName="Osc B FM Mod", .values={""}},
                 {.type=parameterStep, .number=spOscBWave,.shortName="Bwav", .longName="Osc B Waveform", .values={""}},
-                {.type=parameterStep, .number=spOscRing, .shortName="Rmod", .longName="Ring Mod", .values={"Off ", "On  "}},
-                {.type=parameterNone},
+                {.type=parameterStep, .number=spOscBTyp, .shortName="Type", .longName="Osc B Type", .values={"Smpl", "Wave"}},
+        },
+        {
+                {.type=parameterCont, .number=oscAStart, .shortName="AStt", .longName="Osc A Tbl Strt", .values={""}},
+                {.type=parameterCont, .number=oscAWvLfo, .shortName="AWMd", .longName="Osc A Wave Mod", .values={""}},
+                {.type=parameterCont, .number=oscAWvRmp, .shortName="AWRp", .longName="Osc A Wave Rmp", .values={""}},
+                {.type=parameterNone,},
+                {.type=parameterCont, .number=oscBStart, .shortName="BStt", .longName="Osc B Tbl Strt", .values={""}},
+                {.type=parameterCont, .number=oscBWvLfo, .shortName="BWMd", .longName="Osc B Wave Mod", .values={""}},
+                {.type=parameterCont, .number=oscBWvRmp, .shortName="BWRp", .longName="Osc B Wave Rmp", .values={""}},
+                {.type=parameterNone,},
         },
         {
                 {.type=parameterCont, .number=fltrCutoff, .shortName="FCut", .longName="Filter Cutoff", .values={""}},
@@ -84,8 +94,8 @@ const struct interfaceParam_s interfaceParameters[PARAMETER_PAGES][8] = {
                 {.type=parameterStep, .number=spLfoAspeed, .shortName="Aspd", .longName="LFO A Speed", .values={"Fast", "Slow"}},
                 {.type=parameterStep, .number=spLfoATrk, .shortName="ATrk", .longName="LFO A Tracking", .values={"Off ", "On  "}},
                 {.type=parameterStep, .number=spLfoATrig, .shortName="ATrg", .longName="LFO A Trig", .values={"Sngl", "Mlti"}},
-                {.type=parameterCont, .number=rampAmount, .shortName="RAmt", .longName="Ramp Amplitude", .values={""}},
                 {.type=parameterCont, .number=rampRate, .shortName="RRte", .longName="Ramp Rate", .values={""}},
+                {.type=parameterNone, },
         },
         {
                 {.type=parameterCont, .number=lfoBPitch, .shortName="BAmp", .longName="LFO B Amplitude", .values={""}},
@@ -102,16 +112,17 @@ const struct interfaceParam_s interfaceParameters[PARAMETER_PAGES][8] = {
 uint8_t interfaceParameterHandleUserInput(int8_t input, uint16_t pot_value, uint8_t paramPage) {
 
 
-    Serial.print("Update Parameters: ");
-    Serial.print(input);
-    Serial.print(", ");
-    Serial.println(pot_value);
+    //Serial.print("Update Parameters: ");
+    //Serial.print(input);
+    //Serial.print(", ");
+    //Serial.println(pot_value);
     switch (input){
         case 3:{
             interfacePatchesSavePatch(patchInfo.number);
 
             lcdClearScreen();
             lcdChangePos(0,0);
+            interfacePatchesSavePatch(patchInfo.number);
             lcdSendCharArray((char *) "Saving Patch");
             delay(3000);
 
@@ -120,10 +131,10 @@ uint8_t interfaceParameterHandleUserInput(int8_t input, uint16_t pot_value, uint
         }
         case 4:{
             //interfacePatchesSetWriteProtect(static_cast<uint8_t>(!patchInfo.writeProtect));
-            interfacePatchesInitPatch(patchInfo.number);
 
             lcdClearScreen();
             lcdChangePos(0,0);
+            interfacePatchesInitPatch(patchInfo.number);
             lcdSendCharArray((char *) "Initializing Patch");
             delay(3000);
 
@@ -184,7 +195,7 @@ void interfaceParameterUpdatePage(uint8_t paramPage) {
     delay(2);
     const char *space = " ";
     lcdChangePos(0, 0);
-    for (int i = 0; i < PARAMETER_PAGES / 2; ++i) {
+    for (int i = 0; i < 4; ++i) {
         //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
         if (interfaceParameters[paramPage][i].type != parameterNone) {
             lcdSendCharArray(interfaceParameters[paramPage][i].shortName);
@@ -193,7 +204,7 @@ void interfaceParameterUpdatePage(uint8_t paramPage) {
     }
 
     lcdChangePos(0, 1);
-    for (int i = 0; i < PARAMETER_PAGES / 2; ++i) {
+    for (int i = 0; i < 4; ++i) {
         static char dv[5] = {0};
         //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
         if (interfaceParameters[paramPage][i].type == parameterCont) {
@@ -209,7 +220,7 @@ void interfaceParameterUpdatePage(uint8_t paramPage) {
     }
 
     lcdChangePos(0, 2);
-    for (int i = PARAMETER_PAGES / 2; i < PARAMETER_PAGES; ++i) {
+    for (int i = 4; i < 8; ++i) {
         if (interfaceParameters[paramPage][i].type != parameterNone) {
             lcdSendCharArray(interfaceParameters[paramPage][i].shortName);
             lcdSendCharArray(space);
@@ -217,7 +228,7 @@ void interfaceParameterUpdatePage(uint8_t paramPage) {
     }
 
     lcdChangePos(0, 3);
-    for (int i = PARAMETER_PAGES / 2; i < PARAMETER_PAGES; ++i) {
+    for (int i = 4; i < 8; ++i) {
         static char dv[5] = {0};
         //sprintf(dv, "%-4s", interfaceParameters[interface.param_page][i].shortName);
         if (interfaceParameters[paramPage][i].type == parameterCont) {
