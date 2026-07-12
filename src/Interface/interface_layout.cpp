@@ -10,6 +10,7 @@
 #include "interface_layout.h"
 #include "interface_patches.h"
 #include "interface.h"
+#include "parameter.h"
 
 #define NUMBER_OF_ZONES 8
 #define LAYOUT_DATA_LENGTH 2*NUMBER_OF_ZONES*NUMBER_OF_OSCILLATORS + 2

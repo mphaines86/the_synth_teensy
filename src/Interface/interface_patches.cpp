@@ -6,6 +6,7 @@
 #include "interface_patches.h"
 #include "interface.h"
 #include "synth.h"
+#include "parameter.h"
 #include "main.h" //TODO: Remove and improve DEBUG code
 
 struct patch_struct_t patchInfo = {
@@ -256,7 +257,8 @@ void interfacePatchesSetWriteProtect(uint8_t value){
     lcdSendCharArray(row1);
 
     patchInfo.writeProtect = value;
-    writeData(80, patchInfo.number*EEPROM_PATCH_DATA_SIZE + EEPROM_PATCH_NAME_LENGTH + 1, &patchInfo.writeProtect, 1);
+    // TODO: uncomment when interface works
+    //writeData(80, patchInfo.number*EEPROM_PATCH_DATA_SIZE + EEPROM_PATCH_NAME_LENGTH + 1, &patchInfo.writeProtect, 1);
 
     delay(3000);
 

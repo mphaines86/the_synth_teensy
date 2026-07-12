@@ -1,6 +1,6 @@
 # the_synth_due
 
-This is a work in progress 8 voice synthesizer using referances from dzlonline the_synth code and referances from gligli's overcycler code.
+This is a work in progress 4 voice synthesizer Utilizing 8-bit DAC's. The goal is to recreate the sound of older 80s sample based synths.
 
 ### Video Demonstration
 https://www.youtube.com/watch?v=YTVGzLrhA3o
@@ -8,13 +8,13 @@ https://www.youtube.com/watch?v=YTVGzLrhA3o
 ## Technical Details
 The code is built for the Teensy 3.6, thus it is built for the K66 family of processors. Current specifications of the synth include:
 
-* 8 voices with two oscillators per voice (Changeable using SYNTH_VOICE_COUNT in synth.h)
+* 4 voices with two oscillators per voice (Changeable using SYNTH_VOICE_COUNT in synth.h)
 * 8-bit Sample playback
 * 32,000Hz sample rate (Changeable at FS in synth.h)
 * 3 Four stage ADSR envelope
 * 1 Ramp generator
 * 2 LFOs with a choice of sine, square, saw and Triangle waveforms
-* Analog filter and VCA using the shruthi filter designed by Olivier Gillet from mutable Instruments. Information can be found here: http://mutable-instruments.net/shruthi1/build/smr4mkII
+* Analog filter and VCA using the shruthi filter designed by Emilie Gillet from mutable Instruments. Information can be found here: https://pichenettes.github.io/mutable-instruments-diy-archive/shruthi/build/
 * Midi support is currently done through the arduino_midi_library found here: https://github.com/FortySevenEffects/arduino_midi_library
 
 This code is currently a work in progresses so it is not a gurentee that everything will be in working order.
@@ -22,7 +22,7 @@ This code is currently a work in progresses so it is not a gurentee that everyth
 ## Referances
 Below are all links to resources/codes that I have referanced through out the project.
   
-<http://mutable-instruments.net/shruthi1/build/smr4mkII>
+<https://pichenettes.github.io/mutable-instruments-diy-archive/shruthi/build/>
 
 <https://github.com/FortySevenEffects/arduino_midi_library>
 

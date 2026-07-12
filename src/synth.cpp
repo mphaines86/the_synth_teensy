@@ -15,6 +15,7 @@
 #include "lfo.h"
 #include "Interface/interface.h"
 #include "ramp.h"
+#include "parameter.h"
 #include "util/delay.h"
 #include "system/utilities.h"
 #include "system/midi_l.h"
@@ -397,9 +398,9 @@ void synthBegin()
     GPIOB_PSOR = (1 << 5);
     GPIOB_PSOR = (1 << 10);
 
-    /*set_oscillators();
+    set_oscillators();
     set_envelopes();
-    set_lfo();*/
+    set_lfo();
 
 }
 
@@ -531,8 +532,14 @@ void refreshOscillators(){
 
     for (uint8_t i=0; i < SYNTH_VOICE_COUNT; i++) {
         osc_setSync(&synthesizer.oscillators[i], static_cast<oscSyncMode_t>(spParameterList[spOscSync]));
+#ifndef SAMPLE
         osc_setWaves(&synthesizer.oscillators[i], &waveTableStruct[spParameterList[spOscAWave]], 0, 127, 0);
         osc_setWaves(&synthesizer.oscillators[i], &waveTableStruct[spParameterList[spOscBWave]], 0, 127, 1);
+#else
+        osc_setWaves(&synthesizer.oscillators[i], &waveStruct[spParameterList[spOscAWave]], 0, 127, 0);
+        osc_setWaves(&synthesizer.oscillators[i], &waveStruct[spParameterList[spOscBWave]], 0, 127, 1);
+#endif
+
         osc_setFMModulation(&synthesizer.oscillators[i], cpParameterList[oscFMMod] >> 9);
         osc_setTableValues(&synthesizer.oscillators[i], cpParameterList[oscAStart], cpParameterList[oscAEnd], 0);
         osc_setTableValues(&synthesizer.oscillators[i], cpParameterList[oscBStart], cpParameterList[oscBEnd], 1);

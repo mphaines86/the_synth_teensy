@@ -6,6 +6,6 @@
 #define THE_SYNTH_TEENSY_MAIN_H
 
 #include <MIDI.h>
-// #define DEBUG
+//#define DEBUG
 
 #endif //THE_SYNTH_TEENSY_MAIN_H

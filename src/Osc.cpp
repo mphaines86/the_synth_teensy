@@ -9,6 +9,7 @@
 #include "tables_due.h"
 #include "synth.h"
 
+
 //Converts linear CV pitch into logarithmic pitch
 uint16_t CVtoFrequancy(uint32_t cv){
 	uint8_t octave = cv / 2880;
@@ -33,7 +34,11 @@ void osc_init(struct oscillator_struct * osc){
 		osc->phase_accumulator[i] = 0;
 		osc->frequancy_tuning_word[i] = 0;
 		osc->modulations[i] = 0;
+#ifndef SAMPLE
 		osc_setWaves(osc, &waveTableStruct[0], 0, 127, i);
+#else
+		osc_setWaves(osc, &waveStruct[0], 0, 127, i);
+#endif
 
 		osc->wavetable.start[i] = 0;
 		osc->wavetable.end[i] = 262144;

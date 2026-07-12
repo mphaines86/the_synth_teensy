@@ -30,12 +30,12 @@
 
 
 // LCD MODULES void lcdCmd(char cmd)
-void lcdCmd(char cmd)
+void lcdCmd(uint8_t cmd)
 {
-	int SendCmd=0;
-
-	SendCmd = cmd;
-	SendCmd &=0xF0;          /* zero out the lower 4 bits */
+	GPIOB_PCOR = static_cast<uint32_t>(0x0F);
+	uint8_t SendCmd=0;
+	
+	SendCmd = cmd & 0xF0; /* zero out the lower 4 bits */
 	SendCmd >>= 4;
 
 	GPIOB_PSOR = static_cast<uint32_t>(SendCmd);
@@ -57,26 +57,19 @@ void lcdCmd(char cmd)
 	GPIOB_PCOR = 1 << 4; // pull rs low
 
 	//LCD_E_RS_DAT &= (0 << LCD_E)| (1<< LCD_BL);  /* pull E clock to low */
-	_delay_us(30);       /* wait until the command is complete */
+	_delay_us(37);       /* wait until the command is complete */
 }
 
 
 
 void lcdOpen(void)
 {
-	//LCD_DIR |=  (1 <<PORTD4) |(1 <<PORTD5) |(1 <<PORTD6) |(1 <<PORTD7);       /* configure LCD_DAT port for output */
-	//LCD_E_RS_DIR =  (1 << LCD_E) | (1 << LCD_RS) | (1 << LCD_BL);
-	//_delay_ms(100);
-	//lcdCmd(0x20);        /* set 4-bit data, 2-line display, 5x7 font */
-	_delay_ms(100);        /* wait until "clear display" command is complete */
 	lcdCmd(0x28);        /* set 4-bit data, 2-line display, 5x7 font */
-	_delay_ms(100);        /* wait until "clear display" command is complete */
-	//lcdCmd(0x08);        /* set 4-bit data, 2-line display, 5x7 font */
-	_delay_ms(100);        /* wait until "clear display" command is complete */
+	_delay_ms(100);
 	lcdCmd(0x0F);        /* turn on display, cursor, blinking */
-	_delay_ms(100);        /* wait until "clear display" command is complete */
-	//lcdCmd(0x06);        /* Set the cursor to move right*/
-	//_delay_ms(100);        /* wait until "clear display" command is complete */
+	_delay_ms(100);      
+	lcdCmd(0x06);        /* Set the cursor to move right*/
+	_delay_ms(100);     
 	lcdCmd(0x01);        /* clear screen, move cursor to home */
 	_delay_ms(100);        /* wait until "clear display" command is complete */
 #ifdef DEBUG
@@ -85,10 +78,10 @@ void lcdOpen(void)
 }
 
 
-void lcdSendChar(char cx)
+void lcdSendChar(uint8_t cx)
 {
-
-	int SendCmd=0;
+	GPIOB_PCOR = static_cast<uint32_t>(0x0F);
+	uint8_t SendCmd=0;
 	SendCmd = cx & 0xF0;    /* zero out the lower 4 bits */
 	SendCmd >>= 4;
 
@@ -111,7 +104,7 @@ void lcdSendChar(char cx)
     GPIOB_PCOR = 1 << 4; // pull rs low
 
 	//LCD_E_RS_DAT &= (0 << LCD_E)| (1<< LCD_BL);  /* pull E clock to low */
-	_delay_us(30);       /* wait until the command is complete */
+	_delay_us(37);       /* wait until the command is complete */
 }
 
 void lcdSendCharArray(const char *ptr)  /* breaks the string down to characters ie a pointer to an address that holds the string */
@@ -129,16 +122,16 @@ void lcdClearScreen(void)
 	lcdChangePos(0, 0);   // returns cursor home
 }
 
-void lcdClearline(int line)
+void lcdClearline(uint8_t line)
 {
 	lcdChangePos(0, line);
 	for (int i=0; i < 20; i++) { lcdSendCharArray(" "); }
 	lcdChangePos(0, line);
 }
 
-void lcdChangePos(int x, int y)
+void lcdChangePos(uint8_t x, uint8_t y)
 {
-	int temp = 0x00 + x;
+	uint8_t temp = 0x00 + x;
 
 	switch(y)
 	{

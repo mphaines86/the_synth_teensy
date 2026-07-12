@@ -3,6 +3,7 @@
 #define TABLES_DUE_H
 #include <Arduino.h>
 
+#define SAMPLE
 #define MAX_WAVE_COUNT 16
 struct Voice {
 	const char * name; // 8 Characters + zero
